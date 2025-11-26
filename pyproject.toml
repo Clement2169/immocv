@@ -19,7 +19,9 @@ dependencies = [
     "scikit-learn (>=1.7.2,<2.0.0)",
     "lightgbm (>=4.6.0,<5.0.0)",
     "xgboost (>=3.0.5,<4.0.0)",
-    "tensorflow (>=2.20.0,<3.0.0)"
+    "tensorflow (>=2.20.0,<3.0.0)",
+    "torch (>=2.9.0,<3.0.0) ; python_version >= \"3.11\" and python_version < \"3.15\" and sys_platform == \"linux\"",
+    "streamlit (>=1.51.0,<2.0.0)"
 ]
 
 
