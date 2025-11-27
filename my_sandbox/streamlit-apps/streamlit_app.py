@@ -1,11 +1,11 @@
-import os
-from sys import path
+
 import sys
 import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+from pathlib import Path
 
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
@@ -27,8 +27,8 @@ def scores(clf, choice):
     elif choice == 'Confusion matrix':
         return confusion_matrix(y_test, clf.predict(X_test))
 
-dir = os.path.abspath(__file__)
-sys.path.append(dir)
+dir = Path(__file__)
+sys.path.append(dir.parent.parent)
 
 df=pd.read_csv("./train.csv")
 
