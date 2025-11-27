@@ -25,7 +25,7 @@ def scores(clf, choice):
         return confusion_matrix(y_test, clf.predict(X_test))
     
 
-df=pd.read_csv("../../../data/streamlit/train.csv")
+df=pd.read_csv("./train.csv")
 
 st.title("Projet de classification binaire Titanic")
 st.sidebar.title("Sommaire")
@@ -100,7 +100,7 @@ if page == pages[2] :
     X_test[X_num.columns] = scaler.transform(X_test[X_num.columns])
 
     import pickle
-    clf = pickle.load(open("../../data/streamlit/model", 'rb'))
+    clf = pickle.load(open("../../../data/streamlit/model", 'rb'))
 
     display = st.radio('Que souhaitez-vous montrer ?', ('Accuracy', 'Confusion matrix'))
     if display == 'Accuracy':
