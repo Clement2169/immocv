@@ -25,7 +25,7 @@ def scores(clf, choice):
         return confusion_matrix(y_test, clf.predict(X_test))
     
 
-df=pd.read_csv("./train.csv")
+df=pd.read_csv("train.csv")
 
 st.title("Projet de classification binaire Titanic")
 st.sidebar.title("Sommaire")
