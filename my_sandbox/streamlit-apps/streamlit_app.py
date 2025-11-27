@@ -1,5 +1,4 @@
 
-import sys
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -28,9 +27,10 @@ def scores(clf, choice):
         return confusion_matrix(y_test, clf.predict(X_test))
 
 dir = Path(__file__)
-sys.path.append(dir.parent.parent)
 
-df=pd.read_csv("./train.csv")
+targetFile = dir.parent/ "train.csv"
+
+df=pd.read_csv(targetFile.as_posix())
 
 st.title("Projet de classification binaire Titanic")
 st.sidebar.title("Sommaire")
