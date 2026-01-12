@@ -28,6 +28,7 @@ dependencies = [
     "ipywidgets (==8.1.2)",
     "widgetsnbextension (>=4.0.15,<5.0.0)",
     "shap (>=0.50.0,<0.51.0)",
+    "prophet (>=1.2.1,<2.0.0)",
 ]
 
 
