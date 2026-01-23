@@ -30,6 +30,7 @@ dependencies = [
     "shap (>=0.50.0,<0.51.0)",
     "prophet (>=1.2.1,<2.0.0)",
     "statsmodels (>=0.14.6,<0.15.0)",
+    "scikit-optimize (>=0.10.2,<0.11.0)",
 ]
 
 
