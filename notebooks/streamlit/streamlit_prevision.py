@@ -9,7 +9,8 @@ import datetime
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from prophet import Prophet
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
-
+from sklearn.preprocessing import MinMaxScaler
+import tensorflow as tf
 
 parquet_extension = ".parquet"
 monthly_data_file= "monthly_data" + parquet_extension
@@ -315,6 +316,132 @@ def display_exponential_predictions(df,length) :
     return hw_pred
 
 #  *****************************************************************************
+#  LSTM create_sequences
+#  *****************************************************************************
+
+def create_sequences(data, lookback=30):
+    X, y = [], []
+    for i in range(len(data) - lookback):
+        X.append(data[i:i+lookback, :])
+        y.append(data[i+lookback, 0])  # target = y
+    return np.array(X), np.array(y)
+
+#  *****************************************************************************
+#  LSTM prepare_lstm_data
+#  *****************************************************************************
+
+def prepare_lstm_data(df, features, lookback=30):
+    """Prepare data for LSTM with multiple features"""
+    
+    # Normalize data
+    scaler = MinMaxScaler()
+    scaled_data = scaler.fit_transform(df[features])
+    
+    # create the data
+    X,y = create_sequences(scaled_data,lookback)
+
+    return X, y, scaler
+
+
+#  *****************************************************************************
+#  LSTM prepare_lstm_data
+#  *****************************************************************************
+
+from tensorflow import keras
+from keras.models import Sequential
+from keras.layers import LSTM, Dense, Dropout
+
+def lstm_forecast(df, features, length= 0, lookback=30):
+    """Forecast using LSTM neural network"""
+    st.write ("\n" + "=" * 50)
+    st.write ("LSTM NEURAL NETWORK FORECASTING")
+    st.write ("=" * 50)
+    
+    # Prepare data
+    X, y, scaler = prepare_lstm_data(df, features, lookback)
+
+    with tf.device('/cpu:0'):
+        X = tf.convert_to_tensor(X, np.float32)
+        y = tf.convert_to_tensor(y, np.float32)
+        
+    # Split data
+    if length == 0 :
+       train_size  = int(len(X) * 0.8)
+    else :
+        train_size = -length
+    X_train, X_test = X[:train_size], X[train_size:]
+    y_train, y_test = y[:train_size], y[train_size:]
+ 
+    model = Sequential([
+        LSTM(50, activation='relu', return_sequences=True, 
+             input_shape=(lookback, X.shape[2])),
+        Dropout(0.2),
+        LSTM(50, activation='relu'),
+        Dropout(0.2),
+        Dense(25, activation='relu'),
+        Dense(1)
+    ])
+
+    model.compile(
+        optimizer="adam",
+        loss="mse",
+        metrics =['mae']
+    )
+
+    st.write (model.summary())
+
+    
+    # Train model
+    st.write("Training LSTM model...")
+    history = model.fit(
+        X_train, y_train,
+        epochs=30,
+        batch_size=32,
+        validation_split=0.1,
+        verbose=0
+    )
+    
+    # Make predictions on test set
+    pred_scaled = model.predict(X_test)
+
+    # Re-scale predictions
+    dummy = np.zeros((len(pred_scaled), len(features)))
+    dummy[:, 0] = pred_scaled[:, 0]
+
+    y_pred = scaler.inverse_transform(dummy)[:, 0]
+
+    
+    return model, X_test, y_test, y_pred, history
+
+
+#  *****************************************************************************
+#  LSTM prepare_lstm_data
+#  *****************************************************************************
+def display_lstm_predictions (df, length) :
+
+    features = ['y', 'inflation', 'taux_livret_A', 'taux_BCE', 'taux_pret_20ans']
+
+    tf.config.set_visible_devices([], '')
+
+    with tf.device('/CPU:0'):
+
+        model, X_test, y_test, y_pred, history = lstm_forecast(df=df,features=features,length=length,lookback=30)
+
+        data = {
+            'time' :  df.index[-len(y_pred)],
+            'yhat' : y_pred
+        }
+
+        test_data = df[-length:]
+        y_true = test_data['y']
+        y_pred_lstm = pd.DataFrame(data)
+
+        forecasts = {"LSTM prediction": y_pred_lstm}
+        plot_predictions(forecasts,test_data[-len(y_pred_lstm):],length)
+
+        # mae_lstm, rmse_lstm, mre_lstm, r2_lstm = calculate_metrics(y_true,y_pred_lstm,"LSTM prediction model")
+
+#  *****************************************************************************
 #  main
 #  *****************************************************************************
 
@@ -325,18 +452,16 @@ df = load_appartement_file(current_dir,monthly_data_file)
 inflation = load_appartement_file(current_dir,monthly_inflation_data_file)
 
 
-st.title("Projet de modélisation du prix de vente au m2 des appartements et des maisons")
+st.title("Prédiction du prix de vente au m2 des appartements")
 st.sidebar.title("Sommaire")
-pages=["Exploration", "DataVizualization", "Modélisation"]
+pages=["Exploration", "DataVizualization", "Prédiction"]
 page=st.sidebar.radio("Aller vers", pages)
 
 if page == pages[0] : 
     st.write("### Introduction")
 
     st.dataframe(df.head(10))
-
-    st.write(df.shape)
-    st.dataframe(df.describe())
+    st.dataframe(inflation.head(10))
 
     if st.checkbox("Afficher les NA") :
         st.dataframe(df.isna().sum())
@@ -363,12 +488,14 @@ if page == pages[2] :
     test_data = test_data = df[-length:]
     df_merge = merge_data_inflation(df,inflation)
 
-    choices = ['Prophet', 'Prophet et variables économiques','exponetial predictions']
+    choices = ['Prophet', 'Prophet et variables économiques','exponential smooting predictions','LSTM prediction']
 
-    option = st.selectbox('Choix de la visualisation', choices,index=0)
+    option = st.selectbox('Choix de la prédiction', choices,index=0)
     if option == choices[0] :
         foecast = display_prophet_predictions(df, length)
     elif option == choices[1] :
         foecast_inflation = display_prophet_inflation_predictions(df_merge, length)
     elif option == choices[2] :
         forecast_exponential = display_exponential_predictions(df_merge, length)
+    elif option == choices[3] :
+        forecast_lstm = display_lstm_predictions(df_merge, length)
