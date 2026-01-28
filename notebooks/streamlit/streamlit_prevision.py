@@ -388,7 +388,7 @@ def lstm_forecast(df, features, length= 0, lookback=30):
         metrics =['mae']
     )
 
-    st.write (model.summary())
+    # st.write (model.summary())
 
     
     # Train model
@@ -439,6 +439,8 @@ def display_lstm_predictions (df, length) :
         forecasts = {"LSTM prediction": y_pred_lstm}
         plot_predictions(forecasts,test_data[-len(y_pred_lstm):],length)
 
+        return y_pred_lstm
+
         # mae_lstm, rmse_lstm, mre_lstm, r2_lstm = calculate_metrics(y_true,y_pred_lstm,"LSTM prediction model")
 
 #  *****************************************************************************
@@ -450,7 +452,10 @@ current_dir = Path(__file__).parent
 df = load_appartement_file(current_dir,monthly_data_file)
 
 inflation = load_appartement_file(current_dir,monthly_inflation_data_file)
-
+forecast = None
+forecast_inflation = None
+forecast_exponential = None
+forecast_lstm = None
 
 st.title("Prédiction du prix de vente au m2 des appartements")
 st.sidebar.title("Sommaire")
@@ -485,17 +490,26 @@ if page == pages[2] :
     st.write(title)
     length = 18
 
-    test_data = test_data = df[-length:]
     df_merge = merge_data_inflation(df,inflation)
+    test_data = df_merge[-length:]
 
-    choices = ['Prophet', 'Prophet et variables économiques','exponential smooting predictions','LSTM prediction']
-
+    choices = ['Prophet', 'Prophet et variables économiques','exponential smooting predictions','LSTM prediction','Summary']
     option = st.selectbox('Choix de la prédiction', choices,index=0)
     if option == choices[0] :
-        foecast = display_prophet_predictions(df, length)
+        forecast = display_prophet_predictions(df, length)
+        st.session_state['forecast'] = forecast
     elif option == choices[1] :
-        foecast_inflation = display_prophet_inflation_predictions(df_merge, length)
+        forecast_inflation = display_prophet_inflation_predictions(df_merge, length)
+        st.session_state['forecast_inflation'] = forecast_inflation
     elif option == choices[2] :
         forecast_exponential = display_exponential_predictions(df_merge, length)
+        st.session_state['forecast_exponential'] = forecast_exponential
     elif option == choices[3] :
         forecast_lstm = display_lstm_predictions(df_merge, length)
+        st.session_state['forecast_lstm'] = forecast_lstm
+    elif option == choices[4] :
+        forecasts = {"Exponential smoothing": st.session_state['forecast_exponential'], 
+                        "LSTM prediction" : st.session_state['forecast_lstm'], 
+                        "Prophet": st.session_state['forecast'], 
+                        "Prophet with inflation" : st.session_state['forecast_inflation']}
+        plot_predictions(forecasts,test_data,length)
