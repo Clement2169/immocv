@@ -16,6 +16,16 @@ parquet_extension = ".parquet"
 monthly_data_file= "monthly_data" + parquet_extension
 monthly_inflation_data_file = "monthly_inflation_data" + parquet_extension
 
+PROJECT_TITLE = "Projet immobilier - Modélisation des prix des maisons et appartements - France Métropolitaine"
+PAGES = ["Présentation","Visualisation","Analyse ACP","Modélisation","Prédiction en temps","Prédiction du prix","Conclusion"]
+FLAT_NAME = "appartement"
+HOUSE_NAME = "maison"
+HOUSE_FLAT_CHOICE = [HOUSE_NAME,FLAT_NAME]
+REGRESSION_MODEL_LGB = "LgbRegressor"
+REGRESSION_MODEL_DECISION_TREE = "DecisionTreeRegressor"
+REGRESSION_MODEL_XGB = "XGBRegressor"
+
+REGRESSION_MODEL_CHOICE = [REGRESSION_MODEL_LGB,REGRESSION_MODEL_DECISION_TREE,REGRESSION_MODEL_XGB]
 
 #  *****************************************************************************
 #  load_appartement_file
@@ -25,10 +35,30 @@ def load_appartement_file (start_path, immocv_file) :
     final_path = start_path / immocv_file
     return pd.read_parquet(final_path.as_posix())
 
+
+#  *****************************************************************************
+#  calculate_metrics
+#  *****************************************************************************
+
+def calculate_metrics(actual, predicted, model_name):
+    mae = mean_absolute_error(actual,predicted)
+    rmse = np.sqrt(mean_squared_error(actual, predicted))
+    mre = np.mean(np.abs((actual - predicted) / actual)) * 100
+    r2 = r2_score(actual, predicted)
+
+    
+    st.write(f"\n{model_name} performance  Metrics:")
+    st.write(f"  MAE :  {mae:.2f}")
+    st.write(f"  RMSE: {rmse:.2f}")
+    st.write(f"  MRE : {mre:.2f}%")
+    st.write(f"  R2  : {r2:.4f}")
+
+    return mae, rmse, mre, r2
+
 #  *****************************************************************************
 #  display_pandemic
 #  *****************************************************************************
-def display_pandemic ():
+def flat_display_pandemic ():
     plt.axvline(datetime.datetime(2020, 1,9 ), color='red', linewidth=3, linestyle='-')
     bottom,top = plt.ylim()
     ypos = bottom + (top-bottom)*0.15
@@ -53,13 +83,13 @@ def display_pandemic ():
 #  display_prediction_window
 #  *****************************************************************************
 
-def display_prediction_window() :
+def flat_display_prediction_window() :
     plt.axvspan(datetime.datetime(2024, 7,1 ), datetime.datetime(2025, 12,1 ), color='pink',alpha=0.4)
 
 #  *****************************************************************************
 #  def display_extra_data() :
 #  *****************************************************************************
-def display_extra_data() :
+def flat_display_extra_data() :
     plt.axvspan(datetime.datetime(2025, 3,1 ), datetime.datetime(2025, 12,1 ), color='orange',alpha=0.4)
 
 
@@ -67,7 +97,7 @@ def display_extra_data() :
 #  display_data
 #  *****************************************************************************
 
-def display_data(df) :
+def flat_display_monthly_data(df) :
     
     scaled_annonce = df["scaled_nb_annonce"]*1000 + df.prix_m2_vente.min()
 
@@ -81,9 +111,9 @@ def display_data(df) :
     plt.plot(scaled_annonce,label="scaled nombre d'annonces")
     plt.legend()
 
-    display_pandemic()
+    flat_display_pandemic()
 
-    display_extra_data()
+    flat_display_extra_data()
 
     st.pyplot(fig)
 
@@ -91,7 +121,7 @@ def display_data(df) :
 #  display_inflation_data
 #  *****************************************************************************
 
-def display_inflation_data (inflation,df) :
+def flat_display_monthly_inflation_data (inflation,df) :
 
     prix_scaled = (df.prix_m2_vente -df.prix_m2_vente.min()) / (df.prix_m2_vente.max()-df.prix_m2_vente.min())
     prix_scaled = prix_scaled*inflation.inflation.max()
@@ -113,39 +143,19 @@ def display_inflation_data (inflation,df) :
 
     plt.fill_between(inflation.date,prix_scaled -0.35, prix_scaled+0.35, facecolor='C0', alpha=0.4)
 
-    display_pandemic()
+    flat_display_pandemic()
 
-    display_extra_data()
+    flat_display_extra_data()
+
     plt.legend()
 
     st.pyplot(fig)
-
-
-#  *****************************************************************************
-#  calculate_metrics
-#  *****************************************************************************
-
-def calculate_metrics(actual, predicted, model_name):
-    mae = mean_absolute_error(actual,predicted)
-    rmse = np.sqrt(mean_squared_error(actual, predicted))
-    mre = np.mean(np.abs((actual - predicted) / actual)) * 100
-    r2 = r2_score(actual, predicted)
-
-    
-    st.write(f"\n{model_name} performance  Metrics:")
-    st.write(f"  MAE :  {mae:.2f}")
-    st.write(f"  RMSE: {rmse:.2f}")
-    st.write(f"  MRE : {mre:.2f}%")
-    st.write(f"  R2  : {r2:.4f}")
-
-    return mae, rmse, mre, r2
-
 
 #  *****************************************************************************
 #  plot_predictions
 #  *****************************************************************************
 
-def plot_predictions (forecasts,test_data,length) :
+def flat_plot_predictions (forecasts,test_data,length) :
 
 
     fig = plt.figure()
@@ -169,7 +179,7 @@ def plot_predictions (forecasts,test_data,length) :
 #  display_prophet_predictions
 #  *****************************************************************************
 
-def display_prophet_predictions (df, length = 18) :
+def flat_display_prophet_predictions (df, length = 18) :
 
     df3 = df.rename(columns={"date" : "ds","prix_m2_vente":"y"})
 
@@ -187,7 +197,7 @@ def display_prophet_predictions (df, length = 18) :
 
     fig, ax = plt.subplots()
     model.plot(forecast,ax=ax, ylabel = "prix vente m2")
-    display_extra_data()
+    flat_display_extra_data()
 
     st.pyplot(fig)
 
@@ -196,7 +206,7 @@ def display_prophet_predictions (df, length = 18) :
 
 
     forecasts = {"Prophet prediction": forecast}
-    plot_predictions(forecasts,test_data,length)
+    flat_plot_predictions(forecasts,test_data,length)
 
     mae, rmse, mre, r2 = calculate_metrics(y_true,y_pred,"Prophet")
 
@@ -207,7 +217,7 @@ def display_prophet_predictions (df, length = 18) :
 #  display_prophet_predictions
 #  *****************************************************************************
 
-def display_prophet_inflation_predictions (df, length=18) :
+def flat_display_prophet_inflation_predictions (df, length=18) :
 
     train_data = df[:-length]
     test_data = df[-length:]
@@ -250,7 +260,7 @@ def display_prophet_inflation_predictions (df, length=18) :
 
 
     forecasts = {"Prophet prediction with inflation": forecast1}
-    plot_predictions(forecasts,test_data,length)
+    flat_plot_predictions(forecasts,test_data,length)
 
     regressor_coefficients = {
         'inflation': model.extra_regressors['inflation']['prior_scale'],
@@ -279,7 +289,7 @@ def display_prophet_inflation_predictions (df, length=18) :
 #  *****************************************************************************
 #  main
 #  *****************************************************************************
-def merge_data_inflation (df,inflation) :
+def flat_merge_data_inflation (df,inflation) :
     df3 = df.rename(columns={"date" : "ds","prix_m2_vente":"y"})
     df3 = pd.merge(df3,inflation,left_index=True,right_on="date")
     df3.set_index(df.index,inplace=True)
@@ -290,7 +300,7 @@ def merge_data_inflation (df,inflation) :
 #  *****************************************************************************
 #  display_data
 #  *****************************************************************************
-def display_exponential_predictions(df,length) :
+def flat_display_exponential_predictions(df,length) :
 
 
     train_data = df[:-length]
@@ -309,7 +319,7 @@ def display_exponential_predictions(df,length) :
     hw_pred = hw_pred.to_frame(name='yhat')
 
     forecasts = {"ExponentialSmoothing": hw_pred}
-    plot_predictions(forecasts,test_data,length)
+    flat_plot_predictions(forecasts,test_data,length)
 
     mae_exp, rmse_exp, mre_exp, r2_exp = calculate_metrics(y_true,hw_pred,"ExponentialSmoothing with inflation and loan rates")
 
@@ -319,7 +329,7 @@ def display_exponential_predictions(df,length) :
 #  LSTM create_sequences
 #  *****************************************************************************
 
-def create_sequences(data, lookback=30):
+def flat_create_lstm_sequences(data, lookback=30):
     X, y = [], []
     for i in range(len(data) - lookback):
         X.append(data[i:i+lookback, :])
@@ -330,7 +340,7 @@ def create_sequences(data, lookback=30):
 #  LSTM prepare_lstm_data
 #  *****************************************************************************
 
-def prepare_lstm_data(df, features, lookback=30):
+def flat_prepare_lstm_data(df, features, lookback=30):
     """Prepare data for LSTM with multiple features"""
     
     # Normalize data
@@ -338,7 +348,7 @@ def prepare_lstm_data(df, features, lookback=30):
     scaled_data = scaler.fit_transform(df[features])
     
     # create the data
-    X,y = create_sequences(scaled_data,lookback)
+    X,y = flat_create_lstm_sequences(scaled_data,lookback)
 
     return X, y, scaler
 
@@ -351,14 +361,14 @@ from tensorflow import keras
 from keras.models import Sequential
 from keras.layers import LSTM, Dense, Dropout
 
-def lstm_forecast(df, features, length= 0, lookback=30):
+def flat_lstm_forecast(df, features, length= 0, lookback=30):
     """Forecast using LSTM neural network"""
     st.write ("\n" + "=" * 50)
     st.write ("LSTM NEURAL NETWORK FORECASTING")
     st.write ("=" * 50)
     
     # Prepare data
-    X, y, scaler = prepare_lstm_data(df, features, lookback)
+    X, y, scaler = flat_prepare_lstm_data(df, features, lookback)
 
     with tf.device('/cpu:0'):
         X = tf.convert_to_tensor(X, np.float32)
@@ -417,7 +427,7 @@ def lstm_forecast(df, features, length= 0, lookback=30):
 #  *****************************************************************************
 #  LSTM prepare_lstm_data
 #  *****************************************************************************
-def display_lstm_predictions (df, length) :
+def flat_display_lstm_predictions (df, length) :
 
     features = ['y', 'inflation', 'taux_livret_A', 'taux_BCE', 'taux_pret_20ans']
 
@@ -425,7 +435,7 @@ def display_lstm_predictions (df, length) :
 
     with tf.device('/CPU:0'):
 
-        model, X_test, y_test, y_pred, history = lstm_forecast(df=df,features=features,length=length,lookback=30)
+        model, X_test, y_test, y_pred, history = flat_lstm_forecast(df=df,features=features,length=length,lookback=30)
 
         data = {
             'time' :  df.index[-len(y_pred)],
@@ -437,7 +447,7 @@ def display_lstm_predictions (df, length) :
         y_pred_lstm = pd.DataFrame(data)
 
         forecasts = {"LSTM prediction": y_pred_lstm}
-        plot_predictions(forecasts,test_data[-len(y_pred_lstm):],length)
+        flat_plot_predictions(forecasts,test_data[-len(y_pred_lstm):],length)
 
         return y_pred_lstm
 
@@ -457,59 +467,103 @@ forecast_inflation = None
 forecast_exponential = None
 forecast_lstm = None
 
-st.title("Prédiction du prix de vente au m2 des appartements")
-st.sidebar.title("Sommaire")
-pages=["Exploration", "DataVizualization", "Prédiction"]
-page=st.sidebar.radio("Aller vers", pages)
+st.title(PROJECT_TITLE)
+pages = PAGES
+page=st.sidebar.radio("Sommaire", pages)
 
+#  *****************************************************************************
+#  Page : Présentation
+#  *****************************************************************************
 if page == pages[0] : 
-    st.write("### Introduction")
+    st.write("### Présentation")
 
-    st.dataframe(df.head(10))
-    st.dataframe(inflation.head(10))
-
-    if st.checkbox("Afficher les NA") :
-        st.dataframe(df.isna().sum())
-
-if page == pages[1] : 
-    title = "Visualization des data  sur la période " + df.index[0].strftime('%Y-%m') + " - " + df.index[0-1].strftime('%Y-%m')
+#  *****************************************************************************
+#  Page : Visualisation des data
+#  *****************************************************************************
+if page == pages[1] :
+    title = "Visualization et traitement sur les données"
     st.write(title)
 
-    choices = ['prix de vente au m2', 'variables économiques']
-    option = st.selectbox('Choix de la visualisation', choices,index=0)
+    house_flat = st.selectbox('Type de bien', HOUSE_FLAT_CHOICE,index=0)
+    if house_flat == HOUSE_NAME :
+         st.write(HOUSE_NAME)
+    elif house_flat == FLAT_NAME :
+         st.write(FLAT_NAME)
 
-    if option == choices[0] :
-        display_data(df)
-    else :
-        display_inflation_data (inflation,df)
-
-
-
+#  *****************************************************************************
+#  Page : ACP
+#  *****************************************************************************
 if page == pages[2] : 
-    title = "Prediction du prix au m2 des appartements " + df.index[0].strftime('%Y-%m') + " - " + df.index[0-1].strftime('%Y-%m')
+    st.write("### Analyse en Composantes Principales")
+
+#  *****************************************************************************
+#  Page : Modelisation
+#  *****************************************************************************
+if page == pages[3] :
+    title = "Modélisation du prix de vente au m2 des appartements et des maisons"
     st.write(title)
-    length = 18
 
-    df_merge = merge_data_inflation(df,inflation)
-    test_data = df_merge[-length:]
+    house_flat = st.selectbox('Type de bien', HOUSE_FLAT_CHOICE,index=0)
+    model_type = st.selectbox('Choix du modèle', REGRESSION_MODEL_CHOICE,index=0)
 
-    choices = ['Prophet', 'Prophet et variables économiques','exponential smooting predictions','LSTM prediction','Summary']
-    option = st.selectbox('Choix de la prédiction', choices,index=0)
-    if option == choices[0] :
-        forecast = display_prophet_predictions(df, length)
-        st.session_state['forecast'] = forecast
-    elif option == choices[1] :
-        forecast_inflation = display_prophet_inflation_predictions(df_merge, length)
-        st.session_state['forecast_inflation'] = forecast_inflation
-    elif option == choices[2] :
-        forecast_exponential = display_exponential_predictions(df_merge, length)
-        st.session_state['forecast_exponential'] = forecast_exponential
-    elif option == choices[3] :
-        forecast_lstm = display_lstm_predictions(df_merge, length)
-        st.session_state['forecast_lstm'] = forecast_lstm
-    elif option == choices[4] :
-        forecasts = {"Exponential smoothing": st.session_state['forecast_exponential'], 
-                        "LSTM prediction" : st.session_state['forecast_lstm'], 
-                        "Prophet": st.session_state['forecast'], 
-                        "Prophet with inflation" : st.session_state['forecast_inflation']}
-        plot_predictions(forecasts,test_data,length)
+
+#  *****************************************************************************
+#  Page : Time prediction
+#  *****************************************************************************
+if page == pages[4] : 
+    title = "Prediction en temps du prix au m2 des appartements sur la période " + df.index[0].strftime('%Y-%m') + " - " + df.index[0-1].strftime('%Y-%m')
+    st.write(title)
+
+    tab1, tab2 = st.tabs(["Visualisation", "Prediction"])
+    with tab1 :
+        title = "Visualization des data  sur la période " + df.index[0].strftime('%Y-%m') + " - " + df.index[0-1].strftime('%Y-%m')
+        st.write(title)
+
+        choices = ['prix de vente au m2', 'variables économiques']
+        option = st.selectbox('Choix de la visualisation', choices,index=0)
+
+        if option == choices[0] :
+            flat_display_monthly_data(df)
+        else :
+            flat_display_monthly_inflation_data (inflation,df)
+    with tab2 :
+        title = "Prediction du prix au m2 des appartements"
+        st.write(title)
+        length = 18
+
+        df_merge = flat_merge_data_inflation(df,inflation)
+        test_data = df_merge[-length:]
+
+        choices = ['Prophet', 'Prophet et variables économiques','exponential smooting predictions','LSTM prediction','Summary']
+        option = st.selectbox('Choix de la prédiction', choices,index=0)
+        if option == choices[0] :
+            forecast = flat_display_prophet_predictions(df, length)
+            st.session_state['forecast'] = forecast
+        elif option == choices[1] :
+            forecast_inflation = flat_display_prophet_inflation_predictions(df_merge, length)
+            st.session_state['forecast_inflation'] = forecast_inflation
+        elif option == choices[2] :
+            forecast_exponential = flat_display_exponential_predictions(df_merge, length)
+            st.session_state['forecast_exponential'] = forecast_exponential
+        elif option == choices[3] :
+            forecast_lstm = flat_display_lstm_predictions(df_merge, length)
+            st.session_state['forecast_lstm'] = forecast_lstm
+        elif option == choices[4] :
+            forecasts = {"Exponential smoothing": st.session_state['forecast_exponential'], 
+                            "LSTM prediction" : st.session_state['forecast_lstm'], 
+                            "Prophet": st.session_state['forecast'], 
+                            "Prophet with inflation" : st.session_state['forecast_inflation']}
+            flat_plot_predictions(forecasts,test_data,length)
+
+#  *****************************************************************************
+#  Page : prediction du prix
+#  *****************************************************************************
+if page == pages[5] : 
+    title = "Prediction du prix ou d'un appartemment"
+    st.write(title)
+
+#  *****************************************************************************
+#  Page : Conclusion
+#  *****************************************************************************
+if page == pages[len(pages)-1] : 
+    st.write("### Conclusion")
