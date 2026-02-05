@@ -4,10 +4,9 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-from statsmodels.tsa.holtwinters import ExponentialSmoothing
-from sklearn.preprocessing import MinMaxScaler
 import tensorflow as tf
 
+from streamlit_modelisation_app import ACP_OPTION, MODEL_NAMES, flat_plot_decision_tree, flat_plot_xgb
 from streamlit_prevision_app import flat_display_exponential_predictions, flat_display_lstm_predictions, flat_display_monthly_data, flat_display_monthly_inflation_data, flat_display_prophet_inflation_predictions, flat_display_prophet_predictions, flat_merge_data_inflation, flat_plot_predictions
 
 parquet_extension = ".parquet"
@@ -19,23 +18,36 @@ PAGES = ["Présentation","Visualisation","Analyse ACP","Modélisation","Prédict
 FLAT_NAME = "appartement"
 HOUSE_NAME = "maison"
 HOUSE_FLAT_CHOICE = [HOUSE_NAME,FLAT_NAME]
-REGRESSION_MODEL_LGB = "LgbRegressor"
-REGRESSION_MODEL_DECISION_TREE = "DecisionTreeRegressor"
-REGRESSION_MODEL_XGB = "XGBRegressor"
 
-REGRESSION_MODEL_CHOICE = [REGRESSION_MODEL_LGB,REGRESSION_MODEL_DECISION_TREE,REGRESSION_MODEL_XGB]
+LINEAR = "Linear Regressors"
+NON_LINEAR = "Non Linear Regressors"
+XGB = "XGBRegressor"
+DECISION_TREE = "DecisionTreeRegressor"
+MODEL_NAMES = [LINEAR,NON_LINEAR, XGB,DECISION_TREE]
+AVEC_ACP = "Avec ACP"
+SANS_ACP = "Sans ACP"
+ACP_OPTION = [AVEC_ACP,SANS_ACP]
+
 
 current_dir = Path(__file__).parent
-
 data_dir = current_dir / "data"
+
+data_dir_model = data_dir/ "model"
+data_dir_visu = data_dir/ "visu"
+data_dir_temps = data_dir/ "pred-temps"
+data_dir_prix = data_dir/ "pred-prix"
 
 #  *****************************************************************************
 #  load_appartement_file
 #  *****************************************************************************
 
-def load_appartement_file (start_path, immocv_file) :
-    final_path = start_path / immocv_file
+def load_parquet_file (start_path, filename) :
+    if filename.endswith(parquet_extension) :
+        final_path = start_path / filename
+    else :
+        final_path = start_path / (filename + parquet_extension)
     return pd.read_parquet(final_path.as_posix())
+
 
 
 #  *****************************************************************************
@@ -57,10 +69,21 @@ def calculate_metrics(actual, predicted, model_name):
 
     return mae, rmse, mre, r2
 
+#  *****************************************************************************
+#  flat_plot_decision_tree
+#  *****************************************************************************
+
+def get_type_de_bien_selection_box_index(value) :
+
+    if value == HOUSE_NAME :
+        return 0
+    return 1
 
 #  *****************************************************************************
 #  main
 #  *****************************************************************************
+
+st.session_state["type_de_bien_index"] = 1
 
 st.title(PROJECT_TITLE)
 st.sidebar.title("Sommaire")
@@ -99,8 +122,34 @@ if page == pages[3] :
     title = "Modélisation du prix de vente au m2 des appartements et des maisons"
     st.write(title)
 
-    house_flat = st.selectbox('Type de bien', HOUSE_FLAT_CHOICE,index=0)
-    model_type = st.selectbox('Choix du modèle', REGRESSION_MODEL_CHOICE,index=0)
+    index = st.session_state["type_de_bien_index"]
+    house_flat = st.selectbox('Type de bien', HOUSE_FLAT_CHOICE,index=index)
+    st.session_state["type_de_bien_index"] = get_type_de_bien_selection_box_index(house_flat)
+    model_type = st.selectbox('Type de régression', MODEL_NAMES,index=0)
+    with_acp = st.selectbox('ACP option',ACP_OPTION,index=0)
+
+
+    if house_flat == HOUSE_NAME :
+        st.write(HOUSE_NAME)
+    elif house_flat == FLAT_NAME :
+    #  *****************************************************************************
+    #  flat  Modelisation
+    #  *****************************************************************************
+            if with_acp == SANS_ACP :
+                acp_suffix =""
+            else :
+                acp_suffix = "-ACP"
+            if model_type == LINEAR :
+                df = load_parquet_file(data_dir_model,"linear-regressors" + acp_suffix)
+                st.write(df)
+            if model_type == NON_LINEAR :
+                df = load_parquet_file(data_dir_model,"non-linear-regressors" + acp_suffix)
+                st.write(df)
+            if model_type == XGB :
+                flat_plot_xgb(data_dir_model,model_type,acp_suffix)
+            elif model_type == DECISION_TREE :
+                flat_plot_decision_tree(data_dir_model,model_type,acp_suffix)
+
 
 
 #  *****************************************************************************
@@ -109,8 +158,8 @@ if page == pages[3] :
 if page == pages[4] : 
 
     # load data
-    df = load_appartement_file(data_dir,monthly_data_file)
-    inflation = load_appartement_file(data_dir,monthly_inflation_data_file)
+    df = load_parquet_file(data_dir_temps,monthly_data_file)
+    inflation = load_parquet_file(data_dir_temps,monthly_inflation_data_file)
  
     title = "Prediction en temps du prix au m2 des appartements sur la période " + df.index[0].strftime('%Y-%m') + " - " + df.index[0-1].strftime('%Y-%m')
     st.write(title)

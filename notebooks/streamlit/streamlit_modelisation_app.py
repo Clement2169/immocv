@@ -189,7 +189,6 @@ def flat_plot_xgb (current_dir, model_type,acp_suffix) :
         st.write("------------------------------------------------------------")
         st.write("Shows how a feature's value affects predictions")
         st.write("Color shows interaction with another feature")
-        st.write(title)
         # Afficher les résultats
         filename = current_dir / ("shap_dependency_plot"   + acp_suffix + "-" + model_type + shap_app_image_extension)
         st.image (filename.as_posix())
