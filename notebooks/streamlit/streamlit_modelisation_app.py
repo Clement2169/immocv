@@ -18,10 +18,14 @@ PAGES = ["Présentation","Visualisation","Analyse ACP","Modélisation","Prédict
 FLAT_NAME = "appartement"
 HOUSE_NAME = "maison"
 HOUSE_FLAT_CHOICE = [HOUSE_NAME,FLAT_NAME]
+LINEAR = "Linear Regressors"
+NON_LINEAR = "Non Linear Regressors"
 XGB = "XGBRegressor"
 DECISION_TREE = "DecisionTreeRegressor"
-MODEL_NAMES = [XGB,DECISION_TREE]
-
+MODEL_NAMES = [LINEAR,NON_LINEAR, XGB,DECISION_TREE]
+AVEC_ACP = "Avec ACP"
+SANS_ACP = "Sans ACP"
+ACP_OPTION = [AVEC_ACP,SANS_ACP]
 # define variables
 immo_vis_dir = "../../../data/immo_vis/"
 parquet_extension = ".parquet"
@@ -58,8 +62,12 @@ import time
 #  *****************************************************************************
 
 def load_appartement_file (start_path, filename) :
-    final_path = start_path / filename
+    if filename.endswith(parquet_extension) :
+        final_path = start_path / filename
+    else :
+        final_path = start_path / (filename + parquet_extension)
     return pd.read_parquet(final_path.as_posix())
+
 
 
 #  *****************************************************************************
@@ -143,7 +151,7 @@ def train_models (models,X_train, y_train,X_test,y_test) :
 #  flat_plot_shap
 #  *****************************************************************************
 
-def flat_plot_shap (X_train, X_test, y_train, y_test, regressor,current_dir) :
+def flat_plot_xgb (current_dir, model_type,acp_suffix) :
 
     summary, bar,waterfall,dependency = st.tabs(["Shap summary plot", "Shap bar plot","Shap waterfall plot", "Shap dependency plot"])
     with summary :
@@ -155,14 +163,14 @@ def flat_plot_shap (X_train, X_test, y_train, y_test, regressor,current_dir) :
         st.write("• Color: feature value (red=high, blue=low\n")
         st.write("Shap summary plot")
         # Afficher les résultats
-        filename = current_dir / ("shap_summary_plot" + "-" + model_type + shap_app_image_extension)
+        filename = current_dir / ("shap_summary_plot"  + acp_suffix + "-" + model_type + shap_app_image_extension)
         st.image (filename.as_posix())
     with bar :
         st.write("2. BAR  PLOT (Mean Feature Importance)")
         st.write("------------------------------------------------------------")
         st.write("Shows average impact magnitude of each feature")
         # Afficher les résultats
-        filename = current_dir / ("shap_bar_plot" + "-" + model_type + shap_app_image_extension)
+        filename = current_dir / ("shap_bar_plot"  + acp_suffix + "-" + model_type + shap_app_image_extension)
         st.image (filename.as_posix())
     with waterfall:
         st.write("3. WATERFALL PLOT (Single Prediction Breakdown)")
@@ -174,7 +182,7 @@ def flat_plot_shap (X_train, X_test, y_train, y_test, regressor,current_dir) :
         st.write("• Ends at the final prediction")
 
         # Afficher les résultats
-        filename = current_dir / ("shap_waterfall_plot" + "-" + model_type + shap_app_image_extension)
+        filename = current_dir / ("shap_waterfall_plot"  + acp_suffix + "-" + model_type + shap_app_image_extension)
         st.image (filename.as_posix())
     with dependency:
         st.write("4. DEPENDENCE PLOTS (Individual Feature Effects)")
@@ -183,52 +191,26 @@ def flat_plot_shap (X_train, X_test, y_train, y_test, regressor,current_dir) :
         st.write("Color shows interaction with another feature")
         st.write(title)
         # Afficher les résultats
-        filename = current_dir / ("shap_dependency_plot" + "-" + model_type + shap_app_image_extension)
+        filename = current_dir / ("shap_dependency_plot"   + acp_suffix + "-" + model_type + shap_app_image_extension)
         st.image (filename.as_posix())
 
 #  *****************************************************************************
 #  flat_plot_decision_tree
 #  *****************************************************************************
 
-def flat_plot_decision_tree (regressor) :
+def flat_plot_decision_tree (current_dir,model_type,acp_suffix) :
 
     feature_importance, decision_tree = st.tabs(["Feature importances", "Decision Tree"])
     with feature_importance :
-        feat_importances = pd.Series(
-        regressor.feature_importances_, X_train.columns)
-        fig = plt.figure()
-        feat_importances.nlargest(10).plot(kind='barh',title="Decision Tree plot Appartements")
-        st.pyplot(fig)
+        filename = current_dir / ("decision_tree_importance" + acp_suffix + "-" + model_type + shap_app_image_extension)
+        st.image (filename.as_posix())
     with decision_tree :
-        fig, ax = plt.subplots(figsize=(12,10))
-        plot_tree(regressor, 
-            feature_names=[f'Feature {name}' for name in X.columns],
-            ax=ax,
-            max_depth =4,
-            filled=True,
-            rounded=True,
-            fontsize=10,
-            proportion=True,  # Show proportion of samples
-            precision=2)      # Decimal precision
-        st.pyplot(fig)
+        filename = current_dir / ("decision_tree_tree" + acp_suffix + "-" + model_type + shap_app_image_extension)
+        st.image (filename.as_posix())
 
 #  *****************************************************************************
 #  flat_plot_decision_tree
 #  *****************************************************************************
-
-def flat_load_modelisation_data (current_dir) :
-
-    if "load_modelisation_flat_data" not in st.session_state :
-        FlatRegressionModels = {}
-        st.session_state["load_modelisation_flat_data"] = True
-        for model_name in MODEL_NAMES :
-            FlatRegressionModels[model_name]= load_model_file(current_dir,app_model_file,model_name,compression_extension)
-        st.session_state["flat_models"] = FlatRegressionModels
-        df_app = load_appartement_file (current_dir,app_model_data_file)
-        target_column= 'prix_m2_vente'
-        X,y = apply_preprocessing(df_app, target_column=target_column)
-        st.session_state["flat_model_X"] =X
-        st.session_state["flat_model_Y"] =y
 
 def get_type_de_bien_selection_box_index(value) :
 
@@ -245,9 +227,7 @@ if __name__ == '__main__':
 
     current_dir = Path(immo_vis_dir)
 
-    flat_load_modelisation_data(current_dir)
-
-    st.session_state["type_de_bien_index"] = 0
+    st.session_state["type_de_bien_index"] = 1
 
     st.title(PROJECT_TITLE)
     st.sidebar.title("Sommaire")
@@ -286,28 +266,34 @@ if __name__ == '__main__':
         title = "Modélisation du prix de vente au m2 des appartements et des maisons"
         st.write(title)
 
-        FlatRegressionModels = st.session_state["flat_models"]
-        X=  st.session_state["flat_model_X"]
-        y=  st.session_state["flat_model_Y"]
-
+   
         index = st.session_state["type_de_bien_index"]
         house_flat = st.selectbox('Type de bien', HOUSE_FLAT_CHOICE,index=index)
         st.session_state["type_de_bien_index"] = get_type_de_bien_selection_box_index(house_flat)
         model_type = st.selectbox('Type de régression', MODEL_NAMES,index=0)
-    
+        with_acp = st.selectbox('ACP option',ACP_OPTION,index=0)
+
 
         if house_flat == HOUSE_NAME :
             st.write(HOUSE_NAME)
         elif house_flat == FLAT_NAME :
-            regressor = {k: FlatRegressionModels[k] for k in [model_type] if k in FlatRegressionModels}
-            X_train, X_test, y_train, y_test = create_train_test_data(X,y)
-            results = train_models(regressor,X_train,y_train,X_test,y_test)
-            st.write(results)
+    #  *****************************************************************************
+    #  flat  Modelisation
+    #  *****************************************************************************
+            if with_acp == SANS_ACP :
+                acp_suffix =""
+            else :
+                acp_suffix = "-ACP"
+            if model_type == LINEAR :
+                df = load_appartement_file(current_dir,"linear-regressors" + acp_suffix)
+                st.write(df)
+            if model_type == NON_LINEAR :
+                df = load_appartement_file(current_dir,"non-linear-regressors" + acp_suffix)
+                st.write(df)
             if model_type == XGB :
-                flat_plot_shap(X_train, X_test, y_train, y_test, regressor,current_dir)
+                flat_plot_xgb(current_dir,model_type,acp_suffix)
             elif model_type == DECISION_TREE :
-                decision_tree = FlatRegressionModels[model_type]
-                flat_plot_decision_tree(decision_tree)
+                flat_plot_decision_tree(current_dir,model_type,acp_suffix)
  
 
     #  *****************************************************************************
