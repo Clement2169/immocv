@@ -2,6 +2,7 @@ numpy
 pandas
 matplotlib
 prophet
+pyplot
 seaborn
 statsmodels
 scikit-learn
