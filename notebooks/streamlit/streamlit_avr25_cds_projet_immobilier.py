@@ -8,8 +8,8 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 import tensorflow as tf
 
 from dataVis import corr_plots
-from ACP_immo import INTERPRETATIONS_PC, OUTLIERS_A_EXCLURE, acp_compute_components, acp_load_data, acp_preprocess_data, afficher_stats_individus_st, afficher_stats_variables_st, get_top_features, plot_cercle_correlation_st, plot_nuage_individus_intelligent_st
-from Streamlit_maison_app import generate_shap_waterfall_plot, house_add_ACP, house_input_prep, house_price_pred
+from streamlit_acp_immo import INTERPRETATIONS_PC, OUTLIERS_A_EXCLURE, acp_compute_components, acp_load_data, acp_preprocess_data, afficher_stats_individus_st, afficher_stats_variables_st, get_top_features, plot_cercle_correlation_st, plot_nuage_individus_intelligent_st
+from streamlit_maison_app import generate_shap_waterfall_plot, house_add_ACP, house_input_prep, house_price_pred
 from streamlit_modelisation_app import ACP_OPTION, MODEL_NAMES, flat_plot_decision_tree, flat_plot_xgb
 from streamlit_prevision_app import flat_display_exponential_predictions, flat_display_lstm_predictions, flat_display_monthly_data, flat_display_monthly_inflation_data, flat_display_prophet_inflation_predictions, flat_display_prophet_predictions, flat_merge_data_inflation, flat_plot_predictions
 
@@ -328,9 +328,10 @@ if page == pages[5] :
             file_path = data_dir_prix / filename
             final_model = pickle.load(open(file_path.as_posix(), 'rb'))
             st.session_state["house_model"]=final_model
+        if "pca" not in st.session_state :
+            st.write(data_dir_prix)
             filename = "df_ACP2_IRIS_immo"
-            file_path = data_dir_prix / filename
-            pca=load_parquet_file(file_path,filename)
+            pca=load_parquet_file(data_dir_prix,filename)
             st.session_state["pca"]=pca
 
 
