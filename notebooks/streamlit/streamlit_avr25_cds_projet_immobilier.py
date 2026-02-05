@@ -6,6 +6,7 @@ from pathlib import Path
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 import tensorflow as tf
 
+from dataVis import corr_plots
 from streamlit_modelisation_app import ACP_OPTION, MODEL_NAMES, flat_plot_decision_tree, flat_plot_xgb
 from streamlit_prevision_app import flat_display_exponential_predictions, flat_display_lstm_predictions, flat_display_monthly_data, flat_display_monthly_inflation_data, flat_display_prophet_inflation_predictions, flat_display_prophet_predictions, flat_merge_data_inflation, flat_plot_predictions
 
@@ -100,14 +101,36 @@ if page == pages[0] :
 #  Page : Visualisation des data
 #  *****************************************************************************
 if page == pages[1] :
+
     title = "Visualization et traitement sur les données"
     st.write(title)
+    house_labels = ['m', 'mn', 'Maison/Villa neuve' ]
+    flat_labels = ['a', 'an']
+    
+    st.write('Description du dataset initial : ')
+    filename = data_dir_visu / 'prop_maison_app_plot.png'
+    st.image(filename.as_posix() )
+    filename = data_dir_visu / 'DataSummaryTable.pkl'
+    st.table(pd.read_pickle(filename.as_posix()))
+    
+    st.subheader(r"Figure montrant le % des NAN dans le dataset initial :")
+    filepath = data_dir_visu / 'percentage_NA_alldata_plot.png'
+    st.image(filepath.as_posix() )
+    
+    st.subheader(r"Corrélation des variables avec le prix/m² :")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        house_flat = st.selectbox('Type de bien', HOUSE_FLAT_CHOICE,index=0)
+    with col2:
+        corr_type = st.selectbox('Type de corrélation à considérer', ['pearson','spearman'],index=0)
+    with col3:
+        corr_threshold = float(st.text_input("Quel seuil à considérer pour l'affichage ? ",value=0.1))
 
-    house_flat = st.selectbox('Type de bien', HOUSE_FLAT_CHOICE,index=0)
-    if house_flat == HOUSE_NAME :
-         st.write("")
-    elif house_flat == FLAT_NAME :
-         st.write("")
+    # if st.button("Préparer le graph"):
+    #     if house_flat == HOUSE_NAME :
+    #         corr_plots(df,corr_type,house_labels,corr_threshold)
+    #     elif house_flat == FLAT_NAME :
+    #         corr_plots(df,corr_type,flat_labels,corr_threshold)
 
 #  *****************************************************************************
 #  Page : ACP
