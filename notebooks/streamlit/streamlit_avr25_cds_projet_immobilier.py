@@ -84,6 +84,25 @@ page=st.sidebar.radio("", pages)
 #  *****************************************************************************
 if page == pages[0] : 
     st.write("### Présentation")
+    import base64
+
+    nom_fichier_pdf = "Compagnon Immobilier_Soutenance-intro.pdf"
+    my_path = data_dir_intro / nom_fichier_pdf
+    with open(my_path.as_posix(), "rb") as pdf_file:
+        base64_pdf = base64.b64encode(pdf_file.read()).decode('utf-8')
+    
+        # Affichage HTML toute page
+        pdf_display = f'''
+            <iframe 
+                src="data:application/pdf;base64,{base64_pdf}#view=FitH" 
+                width="100%" 
+                height="1000"
+                rotate="-90deg"
+                type="application/pdf"
+                style="min-width:100%; width:100%; border:none;">
+            </iframe>
+        '''
+        st.markdown(pdf_display, unsafe_allow_html=True)
 
 #  *****************************************************************************
 #  Page : Visualisation des data
@@ -326,11 +345,6 @@ if page == pages[5] :
     elif house_flat == FLAT_NAME :
          st.write("")
 
-#  *****************************************************************************
-#  Page : Conclusion
-#  *****************************************************************************
-if page == pages[len(pages)-1] : 
-    st.write("### Conclusion")
 
 #  *****************************************************************************
 #  Page : ACP
@@ -569,3 +583,27 @@ if page == pages[2] :
                 
             except FileNotFoundError:
                 st.error(f"Fichier introuvable.")
+
+#  *****************************************************************************
+#  Page : Conclusion
+#  *****************************************************************************
+if page == pages[len(pages)-1] : 
+    st.write("### Conclusion")
+    nom_fichier_pdf = "Compagnon Immobilier_Soutenance-fin.pdf"
+    my_path = data_dir_intro / nom_fichier_pdf
+    with open(my_path.as_posix(), "rb") as pdf_file:
+        import base64
+        base64_pdf = base64.b64encode(pdf_file.read()).decode('utf-8')
+    
+        # Affichage HTML toute page
+        pdf_display = f'''
+            <iframe 
+                src="data:application/pdf;base64,{base64_pdf}#view=FitH" 
+                width="100%" 
+                height="1000" 
+                rotate="-90deg"
+                type="application/pdf"
+                style="min-width:100%; width:100%; border:none;">
+            </iframe>
+        '''
+        st.markdown(pdf_display, unsafe_allow_html=True)
