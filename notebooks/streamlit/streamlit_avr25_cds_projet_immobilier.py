@@ -72,6 +72,11 @@ def get_type_de_bien_selection_box_index(value) :
 #  main
 #  *****************************************************************************
 
+st.set_page_config(
+    page_title="Application Streamlit Wide Mode",
+    layout="wide",
+)
+
 st.session_state["type_de_bien_index"] = 1
 
 st.title(PROJECT_TITLE)
@@ -602,7 +607,7 @@ if page == pages[2] :
 #  *****************************************************************************
 if page == pages[len(pages)-1] : 
     st.write("### Conclusion")
-    nom_fichier_pdf = "Compagnon Immobilier_Soutenance-fin.pdf"
+    nom_fichier_pdf = "Compagnon Immobilier_Soutenance-end.pdf"
     my_path = data_dir_intro / nom_fichier_pdf
     with open(my_path.as_posix(), "rb") as pdf_file:
         import base64
