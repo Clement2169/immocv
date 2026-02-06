@@ -1,8 +1,7 @@
 import pandas as pd
 from pathlib import Path
 
-current_dir = Path(__file__).parent
-data_dir = current_dir / "data-st"
+from config import *
 
 def house_encoding(df):
 
@@ -145,3 +144,72 @@ def generate_shap_waterfall_plot(model, df_row):
     shap.plots.waterfall(shap.Explanation(values=sample_shap_values, base_values=base_value, data=df_row.iloc[0]))
     return fig
 
+
+
+
+# ******************************************
+# Pos pred
+#*******************************************
+def plot_simple_thermometer(prediction, min_price, max_price, mean_price):
+    fig, ax = plt.subplots(figsize=(12, 5))
+    
+    # Calculer la position normalisée (pour déterminer la couleur)
+    position_norm = (prediction - min_price) / (max_price - min_price)
+    position_norm = max(0, min(1, position_norm))  # Limiter entre 0 et 1
+    
+    # Créer un gradient de vert à rouge
+    # Vert (0) -> Jaune (0.5) -> Rouge (1)
+    if position_norm <= 0.5:
+        # De vert à jaune
+        r = position_norm * 2
+        g = 1
+        b = 0
+    else:
+        # De jaune à rouge
+        r = 1
+        g = 2 * (1 - position_norm)
+        b = 0
+    
+    bar_color = (r, g, b)
+
+
+    # Thermomètre de base (avec valeurs réelles)
+    ax.barh(0, max_price - min_price, left=min_price, height=0.3, 
+            color='lightgray', edgecolor='black', linewidth=2)
+    
+    # Remplissage jusqu'à la prédiction avec la couleur calculée
+    ax.barh(0, prediction - min_price, left=min_price, height=0.25, 
+            color=bar_color, alpha=0.8, edgecolor='darkgray', linewidth=1)
+    
+    # Ligne de moyenne
+    ax.axvline(mean_price, color='blue', linestyle='--', linewidth=2, 
+               label=f'Moyenne: {mean_price:,.0f}€')
+    
+    # Marqueur prédiction
+    ax.plot(prediction, 0, 'r*', markersize=25, markeredgecolor='darkred')
+    
+    # Labels des prix
+    ax.text(min_price, -0.25, f'{min_price:,.0f}€', ha='center', fontsize=14)
+    ax.text(max_price, -0.25, f'{max_price:,.0f}€', ha='center', fontsize=14)
+    ax.text(prediction, 0.25, f'{prediction:,.0f}€', ha='center', 
+            fontweight='bold', fontsize=15,
+            bbox=dict(boxstyle='round', facecolor='yellow', edgecolor='red', linewidth=2))
+    
+    # Configurer les limites
+    padding = (max_price - min_price) * 0.05
+    ax.set_xlim(min_price - padding, max_price + padding)
+    ax.set_ylim(-0.5, 0.5)
+    
+    # Enlever les axes
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['bottom'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    
+    # Légende
+    ax.legend(loc='upper right', fontsize=10, framealpha=0.9)
+    
+    plt.tight_layout()
+    st.pyplot(fig)

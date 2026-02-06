@@ -1,4 +1,5 @@
 
+import os
 import pickle
 import streamlit as st
 import pandas as pd
@@ -7,40 +8,13 @@ from pathlib import Path
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 import tensorflow as tf
 
-from streamlit_data_vis import corr_plots
+from streamlit_data_vis import DataViz
 from streamlit_acp_immo import INTERPRETATIONS_PC, OUTLIERS_A_EXCLURE, acp_compute_components,  acp_preprocess_data, afficher_stats_individus_st, afficher_stats_variables_st, get_top_features, plot_cercle_correlation_st, plot_nuage_individus_intelligent_st
-from streamlit_maison_app import generate_shap_waterfall_plot,house_input_prep, house_price_pred
+from streamlit_maison_app import generate_shap_waterfall_plot,house_input_prep, house_price_pred,plot_simple_thermometer
 from streamlit_modelisation_app import ACP_OPTION, MODEL_NAMES, flat_plot_decision_tree, flat_plot_xgb
 from streamlit_prevision_app import flat_display_exponential_predictions, flat_display_lstm_predictions, flat_display_monthly_data, flat_display_monthly_inflation_data, flat_display_prophet_inflation_predictions, flat_display_prophet_predictions, flat_merge_data_inflation, flat_plot_predictions
 
-parquet_extension = ".parquet"
-monthly_data_file= "monthly_data" + parquet_extension
-monthly_inflation_data_file = "monthly_inflation_data" + parquet_extension
-
-PROJECT_TITLE = "Projet immobilier - Modélisation des prix des maisons et appartements - France Métropolitaine"
-PAGES = ["Présentation","Visualisation","Analyse ACP","Modélisation","Prédiction en temps","Prédiction du prix","Conclusion"]
-FLAT_NAME = "appartement"
-HOUSE_NAME = "maison"
-HOUSE_FLAT_CHOICE = [HOUSE_NAME,FLAT_NAME]
-
-LINEAR = "Linear Regressors"
-NON_LINEAR = "Non Linear Regressors"
-XGB = "XGBRegressor"
-DECISION_TREE = "DecisionTreeRegressor"
-MODEL_NAMES = [LINEAR,NON_LINEAR, XGB,DECISION_TREE]
-AVEC_ACP = "Avec ACP"
-SANS_ACP = "Sans ACP"
-ACP_OPTION = [AVEC_ACP,SANS_ACP]
-
-
-current_dir = Path(__file__).parent
-data_dir = current_dir / "data"
-
-data_dir_model = data_dir/ "model"
-data_dir_visu = data_dir/ "visu"
-data_dir_temps = data_dir/ "pred-temps"
-data_dir_prix = data_dir/ "pred-prix"
-data_dir_acp = data_dir/ "acp"
+from config import *
 
 #  *****************************************************************************
 #  load_appartement_file
@@ -115,37 +89,7 @@ if page == pages[0] :
 #  Page : Visualisation des data
 #  *****************************************************************************
 if page == pages[1] :
-
-    title = "Visualization et traitement sur les données"
-    st.write(title)
-    house_labels = ['m', 'mn', 'Maison/Villa neuve' ]
-    flat_labels = ['a', 'an']
-    
-    st.write('Description du dataset initial : ')
-    filename = data_dir_visu / 'prop_maison_app_plot.png'
-    st.image(filename.as_posix() )
-    filename = data_dir_visu / 'DataSummaryTable.pkl'
-    st.table(pd.read_pickle(filename.as_posix()))
-    
-    st.subheader(r"Figure montrant le % des NAN dans le dataset initial :")
-    filepath = data_dir_visu / 'percentage_NA_alldata_plot.png'
-    st.image(filepath.as_posix() )
-    
-    st.subheader(r"Corrélation des variables avec le prix/m² :")
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        house_flat = st.selectbox('Type de bien', HOUSE_FLAT_CHOICE,index=0)
-    with col2:
-        corr_type = st.selectbox('Type de corrélation à considérer', ['pearson','spearman'],index=0)
-    with col3:
-        corr_threshold = float(st.text_input("Quel seuil à considérer pour l'affichage ? ",value=0.1))
-
-    # if st.button("Préparer le graph"):
-    #     if house_flat == HOUSE_NAME :
-    #         corr_plots(df,corr_type,house_labels,corr_threshold)
-    #     elif house_flat == FLAT_NAME :
-    #         corr_plots(df,corr_type,flat_labels,corr_threshold)
-
+    DataViz()
 
 #  *****************************************************************************
 #  Page : Modelisation
@@ -188,7 +132,6 @@ if page == pages[3] :
 #  Page : Time prediction
 #  *****************************************************************************
 if page == pages[4] : 
-
     # load data
     df = load_parquet_file(data_dir_temps,monthly_data_file)
     inflation = load_parquet_file(data_dir_temps,monthly_inflation_data_file)
@@ -243,7 +186,7 @@ if page == pages[4] :
 
 if page == pages[5] :
 
-    title = "Prediction du prix ou d'un appartemment"
+    title = "Prediction du prix/m² de maison ou d'appartemment"
     st.write(title)
     
     filename = "Reference_IRIS_geo2025"
@@ -263,7 +206,7 @@ if page == pages[5] :
         # Remplir la première colonne avec des inputs
         x=(len(house_mod_box_names))/3
         with col1:
-            input_house['DEP'] = st.text_input(f'préciser le DEP')
+            input_house['DEP'] = st.text_input(f'préciser le DEP',value =78)
             for i, name in enumerate(house_mod_box_names):
                 if i // x == 0:  # pour s'assurer que chaque colonne a un certain nombre d'inputs
                     input_house[name] = st.text_input(f'préciser le {name}')
@@ -316,10 +259,19 @@ if page == pages[5] :
             input_house['UU2010'] = int(filtered_data['UU2020'].values[0])
             input_house['CODE_IRIS'] = int(filtered_data['CODE_IRIS'].values[0])
         
-        st.write(f"voila le résumé des inputs : \n",input_house)
         
+        st.text("")
+        st.text("")
+        st.text("")
+        with st.expander("**Afficher le résumé des inputs**",expanded=False):
+            st.write("",input_house)
+        st.text("")
+        st.text("")
+        st.text("")
+
         # Supprimer plusieurs clés
         keys_to_remove = ["LIB_IRIS", "LIBCOM"]
+        LIBCOM=input_house['LIBCOM']
         for key in keys_to_remove:
             input_house.pop(key, None)  # Utiliser `None` pour éviter une erreur si la clé n'existe pas
         
@@ -329,7 +281,6 @@ if page == pages[5] :
             final_model = pickle.load(open(file_path.as_posix(), 'rb'))
             st.session_state["house_model"]=final_model
         if "pca" not in st.session_state :
-            st.write(data_dir_prix)
             filename = "df_ACP2_IRIS_immo"
             pca=load_parquet_file(data_dir_prix,filename)
             st.session_state["pca"]=pca
@@ -339,19 +290,35 @@ if page == pages[5] :
         pca = st.session_state["pca"]
 
         if st.button("Calculer"):
+            with st.expander("**Afficher le résumé des inputs**",expanded=False):
             
-            df_house_encoded=house_input_prep(input_house,box_names,pca)
-            # Faire une prédiction
+                df_house_encoded=house_input_prep(input_house,box_names,pca)
+                # Faire une prédiction
+                
+                df_encoded_reindexed , prediction = house_price_pred(df_house_encoded,final_model)
+                st.session_state.prediction = prediction
             
-            df_encoded_reindexed , prediction = house_price_pred(df_house_encoded,final_model)
-            st.session_state.prediction = prediction
-            st.subheader(f"****Le prix/m² estimé est de : { st.session_state.prediction[0]:.0f} € ****")
+            st.subheader(f"**** Le prix/m² estimé est de : { st.session_state.prediction[0]:.0f} € ****")
 
             # Generate SHAP waterfall plot for the prediction
             shap_plot = generate_shap_waterfall_plot(final_model, df_encoded_reindexed)
             
             # Display the SHAP Waterfall Plot
             st.pyplot(shap_plot)
+            
+            # thermometre de prix
+            
+            st.text("Comparaison avec la commune")
+            stat_path=os.path.join(data_dir_prix,f'stat_COM_{house_flat}.parquet')
+            stat=pd.read_parquet(stat_path)
+            stat=stat[stat['LIBCOM']==LIBCOM]
+            plot_simple_thermometer(st.session_state.prediction[0], stat['min'].values[0], stat['max'].values[0], stat['mean'].values[0])
+
+            st.text("Comparaison dans l'IRIS")
+            stat_path=os.path.join(data_dir_prix,f'stat_IRIS_{house_flat}.parquet')
+            stat=pd.read_parquet(stat_path)
+            stat=stat[stat['CODE_IRIS']==input_house['CODE_IRIS']]
+            plot_simple_thermometer(st.session_state.prediction[0], stat['min'].values[0], stat['max'].values[0], stat['mean'].values[0])
         else:
             st.write("Cliquez sur le bouton pour calculer la prediction du  prix / m² avec Explication SHAP")
         
