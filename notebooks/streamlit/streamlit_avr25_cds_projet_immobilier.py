@@ -11,7 +11,7 @@ import tensorflow as tf
 from streamlit_data_vis import DataViz
 from streamlit_acp_immo import INTERPRETATIONS_PC, OUTLIERS_A_EXCLURE, acp_compute_components,  acp_preprocess_data, afficher_stats_individus_st, afficher_stats_variables_st, get_top_features, plot_cercle_correlation_st, plot_nuage_individus_intelligent_st
 from streamlit_maison_app import generate_shap_waterfall_plot,house_input_prep, house_price_pred,plot_simple_thermometer
-from streamlit_modelisation_app import ACP_OPTION, MODEL_NAMES, flat_plot_decision_tree, flat_plot_xgb
+from streamlit_modelisation_app import ACP_OPTION, DECISION_TREE, DECISION_TREE_REG, LINEAR, MODEL_NAMES, NON_LINEAR, SANS_ACP, XGB, XGB_REG, flat_plot_decision_tree, flat_plot_xgb
 from streamlit_prevision_app import flat_display_exponential_predictions, flat_display_lstm_predictions, flat_display_monthly_data, flat_display_monthly_inflation_data, flat_display_prophet_inflation_predictions, flat_display_prophet_predictions, flat_merge_data_inflation, flat_plot_predictions
 
 from config import *
@@ -118,11 +118,17 @@ if page == pages[3] :
     st.write(title)
 
     index = st.session_state["type_de_bien_index"]
-    house_flat = st.selectbox('Type de bien', HOUSE_FLAT_CHOICE,index=index)
-    st.session_state["type_de_bien_index"] = get_type_de_bien_selection_box_index(house_flat)
-    model_type = st.selectbox('Type de régression', MODEL_NAMES,index=0)
-    with_acp = st.selectbox('ACP option',ACP_OPTION,index=0)
 
+    st.subheader(r"Options pour la modelisation :")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        house_flat = st.selectbox('Type de bien', HOUSE_FLAT_CHOICE,index=index)
+    with col2:
+        st.session_state["type_de_bien_index"] = get_type_de_bien_selection_box_index(house_flat)
+        model_type = st.selectbox('Type de régression', MODEL_NAMES,index=2)
+    with col3:
+         with_acp = st.selectbox('ACP option',ACP_OPTION,index=0)
+    st.write("")
 
     if house_flat == HOUSE_NAME :
         st.write(HOUSE_NAME)
@@ -132,8 +138,11 @@ if page == pages[3] :
     #  *****************************************************************************
             if with_acp == SANS_ACP :
                 acp_suffix =""
+                acp_suffix_reg ="-REG"
             else :
                 acp_suffix = "-ACP"
+                acp_suffix_reg ="-ACP-REG"
+
             if model_type == LINEAR :
                 df = load_parquet_file(data_dir_model,"linear-regressors" + acp_suffix)
                 st.write(df)
@@ -142,8 +151,12 @@ if page == pages[3] :
                 st.write(df)
             if model_type == XGB :
                 flat_plot_xgb(data_dir_model,model_type,acp_suffix)
+            if model_type == XGB_REG :
+                flat_plot_xgb(data_dir_model,XGB,acp_suffix_reg)
             elif model_type == DECISION_TREE :
                 flat_plot_decision_tree(data_dir_model,model_type,acp_suffix)
+            elif model_type == DECISION_TREE_REG :
+                flat_plot_decision_tree(data_dir_model,DECISION_TREE,acp_suffix_reg)
 
 
 
@@ -163,7 +176,7 @@ if page == pages[4] :
         title = "Visualization des data  sur la période " + df.index[0].strftime('%Y-%m') + " - " + df.index[0-1].strftime('%Y-%m')
         st.write(title)
 
-        choices = ['prix de vente au m2', 'variables économiques']
+        choices = ['prix de vente au m2', 'inflation et taux']
         option = st.selectbox('Choix de la visualisation', choices,index=0)
 
         if option == choices[0] :
@@ -178,8 +191,8 @@ if page == pages[4] :
         df_merge = flat_merge_data_inflation(df,inflation)
         test_data = df_merge[-length:]
 
-        choices = ['Prophet', 'Prophet et variables économiques','exponential smooting predictions','LSTM prediction','Summary']
-        option = st.selectbox('Choix de la prédiction', choices,index=0)
+        choices = ['Prophet', 'Prophet avec inflation et taux','exponential smooting predictions','LSTM prediction','Summary']
+        option = st.selectbox('Choix de la prédiction', choices,index=1)
         if option == choices[0] :
             forecast = flat_display_prophet_predictions(df, length)
             st.session_state['forecast'] = forecast
