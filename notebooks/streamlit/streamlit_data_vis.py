@@ -50,14 +50,14 @@ def DataViz() :
     with col1:
         house_flat = st.selectbox('Type de bien', HOUSE_FLAT_CHOICE,index=0)
     with col2:
-        corr_type = st.selectbox('Type de corrélation à considérer', ['pearson','spearman'],index=0)
+        corr_type = st.selectbox('Type de corrélation', ['pearson','spearman'],index=0)
     with col3:
-        corr_threshold = float(st.text_input("Quel seuil à considérer pour l'affichage (%)? ",value=10))
+        corr_threshold = float(st.text_input("Seuil de corrélation (%)? ",value=10))
     
     corr_file_path=os.path.join(data_dir_visu, f'corr_df_{house_flat}_{corr_type}.pkl')
     df_num_corr=pd.read_pickle(corr_file_path)
     
-    if st.button("Préparer le graph"):
+    if st.button("Afficher"):
         if house_flat == HOUSE_NAME :
             corr_plots(df_num_corr,corr_type,house_labels,corr_threshold=corr_threshold/100)
         elif house_flat == FLAT_NAME :
