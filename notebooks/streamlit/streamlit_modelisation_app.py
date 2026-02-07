@@ -22,14 +22,16 @@ LINEAR = "Linear Regressors"
 NON_LINEAR = "Non Linear Regressors"
 XGB_NAME = "XGBRegressor"
 XGB = "XGBRegressor (charts)"
-XGB_REG = "XGBRegressor avec région (charts)"
 DECISION_TREE_NAME = "DecisionTreeRegressor"
 DECISION_TREE = "DecisionTreeRegressor (charts)"
-DECISION_TREE_REG = "DecisionTreeRegressor avec région (charts)"
-MODEL_NAMES = [LINEAR,NON_LINEAR, XGB, XGB_REG, DECISION_TREE,DECISION_TREE_REG]
+MODEL_NAMES = [LINEAR,NON_LINEAR, XGB, DECISION_TREE]
 AVEC_ACP = "Avec ACP"
 SANS_ACP = "Sans ACP"
 ACP_OPTION = [AVEC_ACP,SANS_ACP]
+AVEC_REGION = "Avec Region"
+SANS_REGION = "Sans Region"
+REGION_OPTION = [AVEC_REGION,SANS_REGION]
+
 # define variables
 immo_vis_dir = "../../../data/immo_vis/"
 parquet_extension = ".parquet"

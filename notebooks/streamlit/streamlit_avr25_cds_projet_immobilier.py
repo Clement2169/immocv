@@ -11,7 +11,7 @@ import tensorflow as tf
 from streamlit_data_vis import DataViz
 from streamlit_acp_immo import INTERPRETATIONS_PC, OUTLIERS_A_EXCLURE, acp_compute_components,  acp_preprocess_data, afficher_stats_individus_st, afficher_stats_variables_st, get_top_features, plot_cercle_correlation_st, plot_nuage_individus_intelligent_st
 from streamlit_maison_app import generate_shap_waterfall_plot,house_input_prep, house_price_pred,plot_simple_thermometer
-from streamlit_modelisation_app import ACP_OPTION, DECISION_TREE, DECISION_TREE_NAME, DECISION_TREE_REG, LINEAR, MODEL_NAMES, NON_LINEAR, SANS_ACP, XGB, XGB_NAME, XGB_REG, flat_plot_decision_tree, flat_plot_xgb
+from streamlit_modelisation_app import ACP_OPTION, AVEC_REGION, DECISION_TREE, DECISION_TREE_NAME, LINEAR, MODEL_NAMES, NON_LINEAR, REGION_OPTION, AVEC_ACP, XGB, XGB_NAME,flat_plot_decision_tree, flat_plot_xgb
 from streamlit_prevision_app import flat_display_exponential_predictions, flat_display_lstm_predictions, flat_display_monthly_data, flat_display_monthly_inflation_data, flat_display_prophet_inflation_predictions, flat_display_prophet_predictions, flat_merge_data_inflation, flat_plot_predictions
 
 from config import *
@@ -125,14 +125,16 @@ if page == pages[3] :
     index = st.session_state["type_de_bien_index"]
 
     st.subheader(r"Options pour la modelisation :")
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
     with col1:
         house_flat = st.selectbox('Type de bien', HOUSE_FLAT_CHOICE,index=index)
     with col2:
         st.session_state["type_de_bien_index"] = get_type_de_bien_selection_box_index(house_flat)
-        model_type = st.selectbox('Type de régression', MODEL_NAMES,index=2)
+        model_type = st.selectbox('Type de régression', MODEL_NAMES,index=1)
     with col3:
          with_acp = st.selectbox('ACP option',ACP_OPTION,index=0)
+    with col4:
+         with_region = st.selectbox('Region option',REGION_OPTION,index=0)
     st.write("")
 
     if house_flat == HOUSE_NAME :
@@ -141,12 +143,11 @@ if page == pages[3] :
     #  *****************************************************************************
     #  flat  Modelisation
     #  *****************************************************************************
-            if with_acp == SANS_ACP :
-                acp_suffix =""
-                acp_suffix_reg ="-REG"
-            else :
+            acp_suffix =""
+            if with_acp == AVEC_ACP :
                 acp_suffix = "-ACP"
-                acp_suffix_reg ="-ACP-REG"
+            if with_region == AVEC_REGION :
+                acp_suffix +="-REG"
 
             if model_type == LINEAR :
                 df = load_parquet_file(data_dir_model,"linear-regressors" + acp_suffix)
@@ -156,13 +157,8 @@ if page == pages[3] :
                 st.write(df)
             if model_type == XGB :
                 flat_plot_xgb(data_dir_model,XGB_NAME,acp_suffix)
-            if model_type == XGB_REG :
-                flat_plot_xgb(data_dir_model,XGB_NAME,acp_suffix_reg)
             elif model_type == DECISION_TREE :
                 flat_plot_decision_tree(data_dir_model,DECISION_TREE_NAME,acp_suffix)
-            elif model_type == DECISION_TREE_REG :
-                flat_plot_decision_tree(data_dir_model,DECISION_TREE_NAME,acp_suffix_reg)
-
 
 
 #  *****************************************************************************
