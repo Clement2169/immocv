@@ -101,7 +101,7 @@ def flat_display_monthly_data(df) :
     
     scaled_annonce = df["scaled_nb_annonce"]*1000 + df.prix_m2_vente.min()
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=(12,6))
     title = "prix vente m2 appartement over " + df.index[0].strftime('%Y-%m') + " - " + df.index[0-1].strftime('%Y-%m')
     plt.title (title)
     plt.ylabel('prix vente m2')
@@ -129,7 +129,7 @@ def flat_display_monthly_inflation_data (inflation,df) :
 
     nb_annonce = df.scaled_nb_annonce*inflation.inflation.max()
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=(12,6))
 
     plt.plot (inflation.date, inflation.inflation,label="inflation rate",linewidth=2,color="blue")
     plt.plot (inflation.date, inflation.taux_livret_A,label="taux livret A",color="purple")
@@ -158,7 +158,7 @@ def flat_display_monthly_inflation_data (inflation,df) :
 def flat_plot_predictions (forecasts,test_data,length) :
 
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=(12,6))
     plt.plot(test_data['ds'],test_data["y"],label="test")
     for key, forecast in forecasts.items() : 
         plt.plot(test_data['ds'],forecast["yhat"].iloc[-length:],label=key)
@@ -195,7 +195,7 @@ def flat_display_prophet_predictions (df, length = 18) :
 
     forecast = model.predict(future)
 
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(12, 6))
     model.plot(forecast,ax=ax, ylabel = "prix vente m2")
     flat_display_extra_data()
 
@@ -221,6 +221,8 @@ def flat_display_prophet_inflation_predictions (df, length=18) :
 
     train_data = df[:-length]
     test_data = df[-length:]
+
+    regressor_coefficient_display = False
 
 
     model = Prophet(
@@ -251,7 +253,7 @@ def flat_display_prophet_inflation_predictions (df, length=18) :
     y_pred = forecast1['yhat'][-length:].values
 
 
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(12, 6))
     model.plot(forecast1, ax=ax, ylabel = "prix vente m2",plot_cap=True)
 
     plt.legend()
@@ -262,28 +264,28 @@ def flat_display_prophet_inflation_predictions (df, length=18) :
     forecasts = {"Prophet prediction with inflation": forecast1}
     flat_plot_predictions(forecasts,test_data,length)
 
-    regressor_coefficients = {
-        'inflation': model.extra_regressors['inflation']['prior_scale'],
-        'taux livret A': model.extra_regressors['taux_livret_A']['prior_scale'],
-        'taux BCE': model.extra_regressors['taux_BCE']['prior_scale'],
-        'taux pret 20 ans': model.extra_regressors['taux_pret_20ans']['prior_scale']
-    }
-    fig = plt.figure()
+    if regressor_coefficient_display :
+        regressor_coefficients = {
+            'inflation': model.extra_regressors['inflation']['prior_scale'],
+            'taux livret A': model.extra_regressors['taux_livret_A']['prior_scale'],
+            'taux BCE': model.extra_regressors['taux_BCE']['prior_scale'],
+            'taux pret 20 ans': model.extra_regressors['taux_pret_20ans']['prior_scale']
+        }
+        fig = plt.figure(figsize=(12, 6))
 
-    plt.bar(regressor_coefficients.keys(), regressor_coefficients.values())
-    plt.ylabel('Prior Scale')
-    plt.title('Regressor Prior Scales')
-    plt.tick_params(axis='x', rotation=45)
-    plt.grid(True, alpha=0.3, axis='y')
+        plt.bar(regressor_coefficients.keys(), regressor_coefficients.values())
+        plt.ylabel('Prior Scale')
+        plt.title('Regressor Prior Scales')
+        plt.tick_params(axis='x', rotation=45)
+        plt.grid(True, alpha=0.3, axis='y')
+
+        st.pyplot(fig)
+
+        fig = model.plot_components(forecast1)
+        st.pyplot(fig)
 
     mae_rates, rmse_rates, mre_rates, r2_rates = calculate_metrics(y_true,y_pred,"Prophet with inflation and loan rates")
 
-    st.pyplot(fig)
-
-    fig = model.plot_components(forecast1)
-    st.pyplot(fig)
-
-    
     return forecast1
 
 #  *****************************************************************************
@@ -449,9 +451,11 @@ def flat_display_lstm_predictions (df, length) :
         forecasts = {"LSTM prediction": y_pred_lstm}
         flat_plot_predictions(forecasts,test_data[-len(y_pred_lstm):],length)
 
+        y_pred_metrics = y_pred_lstm.set_index("time")
+        mae_lstm, rmse_lstm, mre_lstm, r2_lstm = calculate_metrics(y_true,y_pred_metrics,"LSTM prediction model")
+
         return y_pred_lstm
 
-        # mae_lstm, rmse_lstm, mre_lstm, r2_lstm = calculate_metrics(y_true,y_pred_lstm,"LSTM prediction model")
 
 #  *****************************************************************************
 #  main

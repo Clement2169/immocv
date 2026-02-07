@@ -11,7 +11,7 @@ import tensorflow as tf
 from streamlit_data_vis import DataViz
 from streamlit_acp_immo import INTERPRETATIONS_PC, OUTLIERS_A_EXCLURE, acp_compute_components,  acp_preprocess_data, afficher_stats_individus_st, afficher_stats_variables_st, get_top_features, plot_cercle_correlation_st, plot_nuage_individus_intelligent_st
 from streamlit_maison_app import generate_shap_waterfall_plot,house_input_prep, house_price_pred,plot_simple_thermometer
-from streamlit_modelisation_app import ACP_OPTION, DECISION_TREE, DECISION_TREE_REG, LINEAR, MODEL_NAMES, NON_LINEAR, SANS_ACP, XGB, XGB_REG, flat_plot_decision_tree, flat_plot_xgb
+from streamlit_modelisation_app import ACP_OPTION, DECISION_TREE, DECISION_TREE_NAME, DECISION_TREE_REG, LINEAR, MODEL_NAMES, NON_LINEAR, SANS_ACP, XGB, XGB_NAME, XGB_REG, flat_plot_decision_tree, flat_plot_xgb
 from streamlit_prevision_app import flat_display_exponential_predictions, flat_display_lstm_predictions, flat_display_monthly_data, flat_display_monthly_inflation_data, flat_display_prophet_inflation_predictions, flat_display_prophet_predictions, flat_merge_data_inflation, flat_plot_predictions
 
 from config import *
@@ -155,13 +155,13 @@ if page == pages[3] :
                 df = load_parquet_file(data_dir_model,"non-linear-regressors" + acp_suffix)
                 st.write(df)
             if model_type == XGB :
-                flat_plot_xgb(data_dir_model,model_type,acp_suffix)
+                flat_plot_xgb(data_dir_model,XGB_NAME,acp_suffix)
             if model_type == XGB_REG :
-                flat_plot_xgb(data_dir_model,XGB,acp_suffix_reg)
+                flat_plot_xgb(data_dir_model,XGB_NAME,acp_suffix_reg)
             elif model_type == DECISION_TREE :
-                flat_plot_decision_tree(data_dir_model,model_type,acp_suffix)
+                flat_plot_decision_tree(data_dir_model,DECISION_TREE_NAME,acp_suffix)
             elif model_type == DECISION_TREE_REG :
-                flat_plot_decision_tree(data_dir_model,DECISION_TREE,acp_suffix_reg)
+                flat_plot_decision_tree(data_dir_model,DECISION_TREE_NAME,acp_suffix_reg)
 
 
 
@@ -176,19 +176,18 @@ if page == pages[4] :
     title = "Prediction en temps du prix au m2 des appartements sur la période " + df.index[0].strftime('%Y-%m') + " - " + df.index[0-1].strftime('%Y-%m')
     st.write(title)
 
-    tab1, tab2 = st.tabs(["Visualisation", "Prediction"])
+    tab1, tab2,tab3 = st.tabs(["Visualisation des prix au m2", "Visualisation des taux d'intérêt", "Prediction"])
     with tab1 :
-        title = "Visualization des data  sur la période " + df.index[0].strftime('%Y-%m') + " - " + df.index[0-1].strftime('%Y-%m')
+        title = "Visualization du prix au m2 sur la période " + df.index[0].strftime('%Y-%m') + " - " + df.index[0-1].strftime('%Y-%m')
         st.write(title)
+        flat_display_monthly_data(df)
 
-        choices = ['prix de vente au m2', 'inflation et taux']
-        option = st.selectbox('Choix de la visualisation', choices,index=0)
-
-        if option == choices[0] :
-            flat_display_monthly_data(df)
-        else :
-            flat_display_monthly_inflation_data (inflation,df)
     with tab2 :
+        title = "Visualization des taux sur la période " + df.index[0].strftime('%Y-%m') + " - " + df.index[0-1].strftime('%Y-%m')
+        st.write(title)
+        flat_display_monthly_inflation_data (inflation,df)
+
+    with tab3 :
         title = "Prediction du prix au m2 des appartements"
         st.write(title)
         length = 18
@@ -196,7 +195,7 @@ if page == pages[4] :
         df_merge = flat_merge_data_inflation(df,inflation)
         test_data = df_merge[-length:]
 
-        choices = ['Prophet', 'Prophet avec inflation et taux','exponential smooting predictions','LSTM prediction','Summary']
+        choices = ['Prophet', 'Prophet avec inflation et taux','Exponential smooting prediction','LSTM prediction','Summary']
         option = st.selectbox('Choix de la prédiction', choices,index=1)
         if option == choices[0] :
             forecast = flat_display_prophet_predictions(df, length)
