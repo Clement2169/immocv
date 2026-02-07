@@ -12,7 +12,7 @@ import matplotlib.ticker as mtick
 from config import *
 
 def corr_plots(df_num_corr,corr_type,labels,corr_threshold=0.1):
-    fig, ax = plt.subplots() 
+    fig, ax = plt.subplots(figsize=(5, 7)) 
     param = {
         'vmax': 1, 
         'vmin': -1, 
@@ -33,9 +33,9 @@ def DataViz() :
   
     house_labels = ['m', 'mn', 'Maison/Villa neuve' ]
     flat_labels = ['a', 'an']
-    title = "Visualization et traitement sur les données"
+    title = "## Visualization et traitement sur les données"
     st.write(title)
-    
+
     intial_tab, nan_tab,cor_tab = st.tabs(['Dataset initial', r"NAN dans le dataset","Corrélation des variables avec le prix/m²"])
     with intial_tab :
         st.write('Description du dataset initial : ')  
@@ -61,14 +61,11 @@ def DataViz() :
         corr_file_path=os.path.join(data_dir_visu, f'corr_df_{house_flat}_{corr_type}.pkl')
         df_num_corr=pd.read_pickle(corr_file_path)
         
-        if st.button("Afficher"):
+        if st.button("Afficher le graph  📊"):
             if house_flat == HOUSE_NAME :
                 corr_plots(df_num_corr,corr_type,house_labels,corr_threshold=corr_threshold/100)
             elif house_flat == FLAT_NAME :
                 corr_plots(df_num_corr,corr_type,flat_labels,corr_threshold=corr_threshold/100)
-
-
-
 
 
 
