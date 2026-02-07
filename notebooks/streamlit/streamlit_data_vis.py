@@ -9,6 +9,9 @@ import numpy as np
 from matplotlib.ticker import PercentFormatter
 import matplotlib.ticker as mtick
 
+REGION="Région"
+DEPARTEMENT="Département"
+
 from config import *
 
 def corr_plots(df_num_corr,corr_type,labels,corr_threshold=0.1):
@@ -36,7 +39,11 @@ def DataViz() :
     title = "## Visualization et traitement sur les données"
     st.write(title)
 
-    intial_tab, nan_tab,cor_tab = st.tabs(['Dataset initial', r"NAN dans le dataset","Corrélation des variables avec le prix/m²"])
+    intial_tab, region_tab,nan_tab,cor_tab, = st.tabs(['Dataset initial ',
+                                            r"prix/m² par région ",
+                                            r"NAN dans le dataset ",
+                                            "Corrélation des variables avec le prix/m²"
+                                            ])
     with intial_tab :
         st.write('Description du dataset initial : ')  
         filepath = os.path.join(data_dir_visu, 'prop_maison_app_plot.png')
@@ -67,7 +74,19 @@ def DataViz() :
             elif house_flat == FLAT_NAME :
                 corr_plots(df_num_corr,corr_type,flat_labels,corr_threshold=corr_threshold/100)
 
-
+        with region_tab :
+            st.subheader(r"Corrélation des variables avec le prix/m² :")
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                house_flat = st.selectbox('Type de bien', HOUSE_FLAT_CHOICE,index=1)
+            with col2:
+                region_type = st.selectbox(r'Prix/m²', [REGION,DEPARTEMENT],index=0)
+            if region_type == REGION :
+                filepath = data_dir_visu / 'prix_m2_regions.png'
+                st.image(filepath )
+            if region_type == DEPARTEMENT :
+                filepath = data_dir_visu / 'prix_m2_departements.png'
+                st.image(filepath )
 
 if __name__=='__main__':
     
