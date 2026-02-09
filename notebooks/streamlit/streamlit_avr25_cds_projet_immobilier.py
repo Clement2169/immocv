@@ -168,6 +168,9 @@ if page == pages[4] :
     # load data
     df = load_parquet_file(data_dir_temps,monthly_data_file)
     inflation = load_parquet_file(data_dir_temps,monthly_inflation_data_file)
+
+    if 'time_chart' not in st.session_state : 
+        st.session_state['time_chart'] = 0
  
     title = "Prediction en temps du prix au m2 des appartements sur la période " + df.index[0].strftime('%Y-%m') + " - " + df.index[0-1].strftime('%Y-%m')
     st.write(title)
@@ -192,25 +195,32 @@ if page == pages[4] :
         test_data = df_merge[-length:]
 
         choices = ['Prophet', 'Prophet avec inflation et taux','Exponential smooting prediction','LSTM prediction','Summary']
-        option = st.selectbox('Choix de la prédiction', choices,index=1)
+        option = st.selectbox('Choix de la prédiction', choices,index=0)
         if option == choices[0] :
+            st.session_state['time_chart']  = (st.session_state['time_chart'] | 1)
             forecast = flat_display_prophet_predictions(df, length)
             st.session_state['forecast'] = forecast
         elif option == choices[1] :
+            st.session_state['time_chart']  = (st.session_state['time_chart'] | 2)
             forecast_inflation = flat_display_prophet_inflation_predictions(df_merge, length)
             st.session_state['forecast_inflation'] = forecast_inflation
         elif option == choices[2] :
+            st.session_state['time_chart']  = (st.session_state['time_chart'] | 4)
             forecast_exponential = flat_display_exponential_predictions(df_merge, length)
             st.session_state['forecast_exponential'] = forecast_exponential
         elif option == choices[3] :
+            st.session_state['time_chart']  = (st.session_state['time_chart'] | 8)
             forecast_lstm = flat_display_lstm_predictions(df_merge, length)
             st.session_state['forecast_lstm'] = forecast_lstm
         elif option == choices[4] :
-            forecasts = {"Exponential smoothing": st.session_state['forecast_exponential'], 
-                            "LSTM prediction" : st.session_state['forecast_lstm'], 
-                            "Prophet": st.session_state['forecast'], 
-                            "Prophet with inflation" : st.session_state['forecast_inflation']}
-            flat_plot_predictions(forecasts,test_data,length)
+            if st.session_state['time_chart'] == 15 :       
+                forecasts = {"Exponential smoothing": st.session_state['forecast_exponential'], 
+                                "LSTM prediction" : st.session_state['forecast_lstm'], 
+                                "Prophet": st.session_state['forecast'], 
+                                "Prophet with inflation" : st.session_state['forecast_inflation']}
+                flat_plot_predictions(forecasts,test_data,length)
+            else :
+                st.write ("visualiser tous les charts avant de visualiser le summary")
 
 #  *****************************************************************************
 #  Page : prediction du prix

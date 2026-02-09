@@ -125,7 +125,6 @@ def flat_display_monthly_inflation_data (inflation,df) :
 
     prix_scaled = (df.prix_m2_vente -df.prix_m2_vente.min()) / (df.prix_m2_vente.max()-df.prix_m2_vente.min())
     prix_scaled = prix_scaled*inflation.inflation.max()
-    print (prix_scaled)
 
     nb_annonce = df.scaled_nb_annonce*inflation.inflation.max()
 
