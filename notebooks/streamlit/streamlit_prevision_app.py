@@ -11,7 +11,10 @@ from prophet import Prophet
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 from sklearn.preprocessing import MinMaxScaler
 import tensorflow as tf
+from pandas.plotting import autocorrelation_plot 
+from statsmodels.tsa.stattools import adfuller
 
+immo_vis_dir = "../../../data/immo_vis"
 parquet_extension = ".parquet"
 monthly_data_file= "monthly_data" + parquet_extension
 monthly_inflation_data_file = "monthly_inflation_data" + parquet_extension
@@ -455,6 +458,41 @@ def flat_display_lstm_predictions (df, length) :
 
         return y_pred_lstm
 
+#  *****************************************************************************
+#  flat_plot_autocorrelation
+#  *****************************************************************************
+
+def flat_plot_autocorrelation (data, option) :
+
+
+    df = data.drop(columns=["date","scaled_nb_annonce","nb_annonce"])
+    title = "prix au m2 des appartements"
+    if option ==1 :
+        df = df.diff(1).dropna()
+        data_title = " differencition ordre 1"
+        title = title + data_title
+    elif option == 2 :
+        data_title = " differencition ordre 2"
+        df = df.diff(1).diff(1).dropna()
+        title = title + data_title
+
+    fig = plt.figure(figsize=(12,6))
+    plt.title (title)
+    plt.plot(df)
+    st.pyplot(fig)
+
+    fig,ax = plt.subplots(figsize=(12,6))
+    autocorrelation_plot(df,ax=ax)
+    st.pyplot(fig)
+
+    ret_values = adfuller(df)
+    pvalue = ret_values[1]
+    st.write ("add-fuller p-value = ",pvalue)
+    if pvalue < 0.05 :
+        st.write (f" {title} est stationnaire")
+    else :
+        st.write (f"{title} n'est pas stationnaire")
+
 
 #  *****************************************************************************
 #  main
@@ -463,6 +501,8 @@ def flat_display_lstm_predictions (df, length) :
 if __name__ == '__main__':
     
     current_dir = Path(__file__).parent
+
+    current_dir = Path(immo_vis_dir)
 
     df = load_appartement_file(current_dir,monthly_data_file)
 
@@ -520,7 +560,7 @@ if __name__ == '__main__':
         title = "Prediction en temps du prix au m2 des appartements sur la période " + df.index[0].strftime('%Y-%m') + " - " + df.index[0-1].strftime('%Y-%m')
         st.write(title)
 
-        tab1, tab2 = st.tabs(["Visualisation", "Prediction"])
+        tab1, tab2,tab3 = st.tabs(["Visualisation", "Prediction","Stationarité"])
         with tab1 :
             title = "Visualization des data  sur la période " + df.index[0].strftime('%Y-%m') + " - " + df.index[0-1].strftime('%Y-%m')
             st.write(title)
@@ -560,6 +600,21 @@ if __name__ == '__main__':
                                 "Prophet": st.session_state['forecast'], 
                                 "Prophet with inflation" : st.session_state['forecast_inflation']}
                 flat_plot_predictions(forecasts,test_data,length)
+
+        with tab3 :
+            title = "Analyse de la stationnarité - Auto correlation"
+            st.write(title)
+
+            choices = ['Prix au m2',"Prix au m2 differentiation ordre 1","Prix au m2 differentiation ordre 2"]
+            option = st.selectbox("Choix d'autocorrelation", choices,index=0)
+            st.write()
+            if option == choices[0] :
+                choice = 0
+            elif option == choices[1] :
+                choice =1
+            elif option == choices[2] :
+                 choice = 2
+            flat_plot_autocorrelation (df,choice)
 
     #  *****************************************************************************
     #  Page : prediction du prix

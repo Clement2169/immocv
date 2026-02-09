@@ -12,7 +12,7 @@ from streamlit_data_vis import DataViz
 from streamlit_acp_immo import INTERPRETATIONS_PC, OUTLIERS_A_EXCLURE, acp_compute_components,  acp_preprocess_data, afficher_stats_individus_st, afficher_stats_variables_st, get_top_features, plot_cercle_correlation_st, plot_nuage_individus_intelligent_st
 from streamlit_maison_app import  page_prediction_prix
 from streamlit_modelisation_app import ACP_OPTION, AVEC_REGION, DECISION_TREE, DECISION_TREE_NAME, LINEAR, MODEL_NAMES, NON_LINEAR, REGION_OPTION, AVEC_ACP, XGB, XGB_NAME,flat_plot_decision_tree, flat_plot_xgb
-from streamlit_prevision_app import flat_display_exponential_predictions, flat_display_lstm_predictions, flat_display_monthly_data, flat_display_monthly_inflation_data, flat_display_prophet_inflation_predictions, flat_display_prophet_predictions, flat_merge_data_inflation, flat_plot_predictions
+from streamlit_prevision_app import flat_display_exponential_predictions, flat_display_lstm_predictions, flat_display_monthly_data, flat_display_monthly_inflation_data, flat_display_prophet_inflation_predictions, flat_display_prophet_predictions, flat_merge_data_inflation, flat_plot_autocorrelation, flat_plot_predictions
 
 from config import *
 
@@ -175,10 +175,10 @@ if page == pages[4] :
     title = "Prediction en temps du prix au m2 des appartements sur la période " + df.index[0].strftime('%Y-%m') + " - " + df.index[0-1].strftime('%Y-%m')
     st.write(title)
 
-    tab1, tab2,tab3 = st.tabs(["Visualisation des prix au m2", "Visualisation des taux d'intérêt", "Prediction"])
+    tab1, tab2,tab3,tab4 = st.tabs(["Visualisation des prix au m2", "Visualisation des taux d'intérêt", "Prediction","Stationnarité"])
     with tab1 :
         title = "Visualization du prix au m2 sur la période " + df.index[0].strftime('%Y-%m') + " - " + df.index[0-1].strftime('%Y-%m')
-        st.write(title)
+        st.subheader(title)
         flat_display_monthly_data(df)
 
     with tab2 :
@@ -188,7 +188,7 @@ if page == pages[4] :
 
     with tab3 :
         title = "Prediction du prix au m2 des appartements"
-        st.write(title)
+        st.subheader(title)
         length = 18
 
         df_merge = flat_merge_data_inflation(df,inflation)
@@ -221,6 +221,19 @@ if page == pages[4] :
                 flat_plot_predictions(forecasts,test_data,length)
             else :
                 st.write ("visualiser tous les charts avant de visualiser le summary")
+    with tab4 :
+            st.subheader(r"Analyse de la stationnarité - Auto correlation prix/m² :")
+
+            choices = ['Prix au m2',"Prix au m2 differentiation ordre 1","Prix au m2 differentiation ordre 2"]
+            option = st.selectbox("Choix d'autocorrelation", choices,index=0)
+            st.write()
+            if option == choices[0] :
+                choice = 0
+            elif option == choices[1] :
+                choice =1
+            elif option == choices[2] :
+                 choice = 2
+            flat_plot_autocorrelation (df,choice)
 
 #  *****************************************************************************
 #  Page : prediction du prix
