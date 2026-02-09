@@ -225,7 +225,7 @@ if page == pages[4] :
             st.subheader(r"Analyse de la stationnarité - Auto correlation prix/m² :")
 
             choices = ['Prix au m2',"Prix au m2 differentiation ordre 1","Prix au m2 differentiation ordre 2"]
-            option = st.selectbox("Choix d'autocorrelation", choices,index=0)
+            option = st.selectbox("Choix d'autocorrelation", choices,index=2)
             st.write()
             if option == choices[0] :
                 choice = 0

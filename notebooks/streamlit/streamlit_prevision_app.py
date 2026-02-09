@@ -469,10 +469,10 @@ def flat_plot_autocorrelation (data, option) :
     title = "prix au m2 des appartements"
     if option ==1 :
         df = df.diff(1).dropna()
-        data_title = " differencition ordre 1"
+        data_title = " differentiation ordre 1"
         title = title + data_title
     elif option == 2 :
-        data_title = " differencition ordre 2"
+        data_title = " differentiation ordre 2"
         df = df.diff(1).diff(1).dropna()
         title = title + data_title
 
