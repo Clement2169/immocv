@@ -5,9 +5,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from pathlib import Path
-import datetime
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.tree import plot_tree
+
+from config import load_parquet_file
 
 parquet_extension = ".parquet"
 monthly_data_file= "monthly_data" + parquet_extension
@@ -222,6 +223,40 @@ def get_type_de_bien_selection_box_index(value) :
     if value == HOUSE_NAME :
         return 0
     return 1
+
+#  *****************************************************************************
+#  flat_plot_decision_tree
+#  *****************************************************************************
+
+def flat_display_modelisation(data_dir) :
+
+    title = "Modélisation du prix de vente au m2 des appartements et des maisons"
+    st.write(title)
+
+    index = st.session_state["type_de_bien_index"]
+
+    st.subheader(r"Options pour la modelisation :")
+    col1, col2, col3 = st.columns(3)
+    model_type = st.selectbox('Type de régression', MODEL_NAMES,index=1)
+    with_acp = st.selectbox('ACP option',ACP_OPTION,index=0)
+    with_region = st.selectbox('Region option',REGION_OPTION,index=0)
+
+    acp_suffix =""
+    if with_acp == AVEC_ACP :
+        acp_suffix = "-ACP"
+    if with_region == AVEC_REGION :
+        acp_suffix +="-REG"
+
+    if model_type == LINEAR :
+        df = load_parquet_file(data_dir,"linear-regressors" + acp_suffix)
+        st.write(df)
+    if model_type == NON_LINEAR :
+        df = load_parquet_file(data_dir,"non-linear-regressors" + acp_suffix)
+        st.write(df)
+    if model_type == XGB :
+        flat_plot_xgb(data_dir,XGB_NAME,acp_suffix)
+    elif model_type == DECISION_TREE :
+        flat_plot_decision_tree(data_dir,DECISION_TREE_NAME,acp_suffix)
 #  *****************************************************************************
 #  main
 #  *****************************************************************************
@@ -271,34 +306,11 @@ if __name__ == '__main__':
         title = "Modélisation du prix de vente au m2 des appartements et des maisons"
         st.write(title)
 
-   
-        index = st.session_state["type_de_bien_index"]
-        house_flat = st.selectbox('Type de bien', HOUSE_FLAT_CHOICE,index=index)
-        st.session_state["type_de_bien_index"] = get_type_de_bien_selection_box_index(house_flat)
-        model_type = st.selectbox('Type de régression', MODEL_NAMES,index=0)
-        with_acp = st.selectbox('ACP option',ACP_OPTION,index=0)
-
-
-        if house_flat == HOUSE_NAME :
-            st.write(HOUSE_NAME)
-        elif house_flat == FLAT_NAME :
     #  *****************************************************************************
     #  flat  Modelisation
     #  *****************************************************************************
-            if with_acp == SANS_ACP :
-                acp_suffix =""
-            else :
-                acp_suffix = "-ACP"
-            if model_type == LINEAR :
-                df = load_appartement_file(current_dir,"linear-regressors" + acp_suffix)
-                st.write(df)
-            if model_type == NON_LINEAR :
-                df = load_appartement_file(current_dir,"non-linear-regressors" + acp_suffix)
-                st.write(df)
-            if model_type == XGB :
-                flat_plot_xgb(current_dir,model_type,acp_suffix)
-            elif model_type == DECISION_TREE :
-                flat_plot_decision_tree(current_dir,model_type,acp_suffix)
+        flat_display_modelisation(data_dir=current_dir)
+    
  
 
     #  *****************************************************************************

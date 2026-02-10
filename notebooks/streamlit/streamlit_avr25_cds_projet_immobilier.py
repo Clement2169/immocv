@@ -11,33 +11,11 @@ import tensorflow as tf
 from streamlit_data_vis import DataViz
 from streamlit_acp_immo import INTERPRETATIONS_PC, OUTLIERS_A_EXCLURE, acp_compute_components,  acp_preprocess_data, afficher_stats_individus_st, afficher_stats_variables_st, get_top_features, plot_cercle_correlation_st, plot_nuage_individus_intelligent_st
 from streamlit_maison_app import  page_prediction_prix
-from streamlit_modelisation_app import ACP_OPTION, AVEC_REGION, DECISION_TREE, DECISION_TREE_NAME, LINEAR, MODEL_NAMES, NON_LINEAR, REGION_OPTION, AVEC_ACP, XGB, XGB_NAME,flat_plot_decision_tree, flat_plot_xgb
+from streamlit_modelisation_app import ACP_OPTION, AVEC_REGION, DECISION_TREE, DECISION_TREE_NAME, LINEAR, MODEL_NAMES, NON_LINEAR, REGION_OPTION, AVEC_ACP, XGB, XGB_NAME, flat_display_modelisation,flat_plot_decision_tree, flat_plot_xgb
 from streamlit_prevision_app import flat_display_exponential_predictions, flat_display_lstm_predictions, flat_display_monthly_data, flat_display_monthly_inflation_data, flat_display_prophet_inflation_predictions, flat_display_prophet_predictions, flat_merge_data_inflation, flat_plot_autocorrelation, flat_plot_predictions
 
 from config import *
 
-#  *****************************************************************************
-#  load_appartement_file
-#  *****************************************************************************
-
-def load_parquet_file (start_path, filename) :
-    if filename.endswith(parquet_extension) :
-        final_path = start_path / filename
-    else :
-        final_path = start_path / (filename + parquet_extension)
-    return pd.read_parquet(final_path.as_posix())
-
-#  *****************************************************************************
-#  load_appartement_file
-#  *****************************************************************************
-
-def save_to_parquet_file (df, start_path, filename,suffix = "") :
-    start_path = Path(start_path)
-    if filename.endswith(parquet_extension) :
-        final_path = start_path / (filename + suffix)
-    else :
-        final_path = start_path / (filename + suffix + parquet_extension)
-    df.to_parquet(path=final_path.as_posix(),index=True,compression="gzip")
 
 #  *****************************************************************************
 #  calculate_metrics
@@ -113,7 +91,7 @@ if page == pages[0] :
 #  Page : Visualisation des data
 #  *****************************************************************************
 if page == pages[1] :
-    DataViz()
+    DataViz(data_dir_prix)
 
 #  *****************************************************************************
 #  Page : Modelisation
@@ -124,42 +102,18 @@ if page == pages[3] :
 
     index = st.session_state["type_de_bien_index"]
 
-    st.subheader(r"Options pour la modelisation :")
-    col1, col2, col3, col4 = st.columns(4)
+    col1,_ = st.columns(2)
     with col1:
         house_flat = st.selectbox('Type de bien', HOUSE_FLAT_CHOICE,index=index)
-    with col2:
         st.session_state["type_de_bien_index"] = get_type_de_bien_selection_box_index(house_flat)
-        model_type = st.selectbox('Type de régression', MODEL_NAMES,index=1)
-    with col3:
-         with_acp = st.selectbox('ACP option',ACP_OPTION,index=0)
-    with col4:
-         with_region = st.selectbox('Region option',REGION_OPTION,index=0)
-    st.write("")
-
-    if house_flat == HOUSE_NAME :
-        st.write(HOUSE_NAME)
-    elif house_flat == FLAT_NAME :
-    #  *****************************************************************************
-    #  flat  Modelisation
-    #  *****************************************************************************
-            acp_suffix =""
-            if with_acp == AVEC_ACP :
-                acp_suffix = "-ACP"
-            if with_region == AVEC_REGION :
-                acp_suffix +="-REG"
-
-            if model_type == LINEAR :
-                df = load_parquet_file(data_dir_model,"linear-regressors" + acp_suffix)
-                st.write(df)
-            if model_type == NON_LINEAR :
-                df = load_parquet_file(data_dir_model,"non-linear-regressors" + acp_suffix)
-                st.write(df)
-            if model_type == XGB :
-                flat_plot_xgb(data_dir_model,XGB_NAME,acp_suffix)
-            elif model_type == DECISION_TREE :
-                flat_plot_decision_tree(data_dir_model,DECISION_TREE_NAME,acp_suffix)
-
+        if house_flat == HOUSE_NAME :
+            st.write(HOUSE_NAME)
+        elif house_flat == FLAT_NAME :
+        #  *****************************************************************************
+        #  flat  Modelisation
+        #  *****************************************************************************
+            flat_display_modelisation(data_dir_model)
+        
 
 #  *****************************************************************************
 #  Page : Time prediction
@@ -241,7 +195,7 @@ if page == pages[4] :
 
 if page == pages[5] :
 
-    page_prediction_prix()
+    page_prediction_prix(data_dir_prix=data_dir_prix)
 
 
 #  *****************************************************************************

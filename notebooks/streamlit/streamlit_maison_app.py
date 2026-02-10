@@ -1,16 +1,9 @@
 import pandas as pd
-from pathlib import Path
 import os
+import numpy as np
+from config import FLAT_NAME,HOUSE_FLAT_CHOICE, HOUSE_NAME, load_parquet_file
 
-from config import *
 
-
-def load_parquet_file (start_path, filename) :
-    if filename.endswith(parquet_extension) :
-        final_path = start_path / filename
-    else :
-        final_path = start_path / (filename + parquet_extension)
-    return pd.read_parquet(final_path.as_posix())
 
 def house_encoding(df):
 
@@ -224,7 +217,7 @@ def plot_simple_thermometer(prediction, min_price, max_price, mean_price):
     st.pyplot(fig)
 
 
-def page_prediction_prix():
+def page_prediction_prix(data_dir_prix):
     
     filename = "Reference_IRIS_geo2025"
     info_geo = load_parquet_file(data_dir_prix,filename)

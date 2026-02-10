@@ -1,4 +1,6 @@
 from pathlib import Path
+import pandas as pd
+
 parquet_extension = ".parquet"
 monthly_data_file= "monthly_data" + parquet_extension
 monthly_inflation_data_file = "monthly_inflation_data" + parquet_extension
@@ -18,3 +20,27 @@ data_dir_temps = data_dir/ "pred-temps"
 data_dir_prix = data_dir/ "pred-prix"
 data_dir_acp = data_dir/ "acp"
 data_dir_intro = data_dir/ "intro"
+
+
+#  *****************************************************************************
+#  load_appartement_file
+#  *****************************************************************************
+
+def load_parquet_file (start_path, filename) :
+    if filename.endswith(parquet_extension) :
+        final_path = start_path / filename
+    else :
+        final_path = start_path / (filename + parquet_extension)
+    return pd.read_parquet(final_path.as_posix())
+
+#  *****************************************************************************
+#  load_appartement_file
+#  *****************************************************************************
+
+def save_to_parquet_file (df, start_path, filename,suffix = "") :
+    start_path = Path(start_path)
+    if filename.endswith(parquet_extension) :
+        final_path = start_path / (filename + suffix)
+    else :
+        final_path = start_path / (filename + suffix + parquet_extension)
+    df.to_parquet(path=final_path.as_posix(),index=True,compression="gzip")
