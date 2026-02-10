@@ -9,10 +9,10 @@ import numpy as np
 from matplotlib.ticker import PercentFormatter
 import matplotlib.ticker as mtick
 
+from config import FLAT_NAME, HOUSE_FLAT_CHOICE, HOUSE_NAME, PAGES, PROJECT_TITLE
+
 REGION="Région"
 DEPARTEMENT="Département"
-
-from config import *
 
 def corr_plots(df_num_corr,corr_type,labels,corr_threshold=0.1):
     fig, ax = plt.subplots(figsize=(5, 7)) 
@@ -32,7 +32,7 @@ def corr_plots(df_num_corr,corr_type,labels,corr_threshold=0.1):
 
 
 
-def DataViz() :
+def DataViz(data_dir_visu) :
   
     house_labels = ['m', 'mn', 'Maison/Villa neuve' ]
     flat_labels = ['a', 'an']

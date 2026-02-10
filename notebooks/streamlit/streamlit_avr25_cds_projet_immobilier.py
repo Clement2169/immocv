@@ -91,7 +91,7 @@ if page == pages[0] :
 #  Page : Visualisation des data
 #  *****************************************************************************
 if page == pages[1] :
-    DataViz(data_dir_prix)
+    DataViz(data_dir_visu)
 
 #  *****************************************************************************
 #  Page : Modelisation
@@ -102,17 +102,15 @@ if page == pages[3] :
 
     index = st.session_state["type_de_bien_index"]
 
-    col1,_ = st.columns(2)
-    with col1:
-        house_flat = st.selectbox('Type de bien', HOUSE_FLAT_CHOICE,index=index)
-        st.session_state["type_de_bien_index"] = get_type_de_bien_selection_box_index(house_flat)
-        if house_flat == HOUSE_NAME :
-            st.write(HOUSE_NAME)
-        elif house_flat == FLAT_NAME :
-        #  *****************************************************************************
-        #  flat  Modelisation
-        #  *****************************************************************************
-            flat_display_modelisation(data_dir_model)
+    house_flat = st.selectbox('Type de bien', HOUSE_FLAT_CHOICE,index=index)
+    st.session_state["type_de_bien_index"] = get_type_de_bien_selection_box_index(house_flat)
+    if house_flat == HOUSE_NAME :
+        st.write(HOUSE_NAME)
+    elif house_flat == FLAT_NAME :
+    #  *****************************************************************************
+    #  flat  Modelisation
+    #  *****************************************************************************
+        flat_display_modelisation(data_dir_model)
         
 
 #  *****************************************************************************
