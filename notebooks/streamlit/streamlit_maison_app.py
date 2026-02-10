@@ -1,11 +1,11 @@
 import pandas as pd
 import os
 import numpy as np
-from config import FLAT_NAME,HOUSE_FLAT_CHOICE, HOUSE_NAME, load_parquet_file
+from config import FLAT_NAME,HOUSE_FLAT_CHOICE, HOUSE_NAME, load_model_file, load_parquet_file
 
 
 
-def house_flat_encoding(df):
+def house_flat_encoding(df,dpe_name= None):
 
         #  *****************************************************************************
         #  Traitement_NA
@@ -24,7 +24,11 @@ def house_flat_encoding(df):
         if 'ges_class' in df.columns:
             df['ges_class']=df['ges_class'].map(mapping)
         if 'dpeL' in df.columns:
-            df['dpeL']=df['dpeL'].map(mapping)
+            if dpe_name is not None :
+                df[dpe_name]=df['dpeL'].map(mapping)
+                df = df.drop("dpeL",axis=1)
+            else:
+                df['dpeL']=df['dpeL'].map(mapping)
 
         #  *****************************************************************************
         #  chauffage_energie
@@ -372,7 +376,7 @@ def flat_input_prep(input_flat,box_names,pca):
     st.dataframe(df_flat_pred)
     st.write(df_flat_pred)
     
-    df_flat_encoded=house_flat_encoding(df_flat_pred)
+    df_flat_encoded=house_flat_encoding(df_flat_pred,'dpeL_num')
     df_flat_encoded=house_flat_exposition_streamlit(df_flat_encoded)
     
     st.write("DF apres encodage : ")
@@ -390,50 +394,93 @@ def flat_input_prep(input_flat,box_names,pca):
 #  page_prediction_prix_flat
 #  *****************************************************************************
 
-def page_prediction_prix_flat(data_dir_prix,info_geo):
-    input_house={}
+def page_prediction_prix_flat(data_dir_prix):
+
+    model_name = "flat_model"
+    if model_name not in st.session_state :
+        filename = "appartement_model.gz"
+        final_model = load_model_file(data_dir_prix,filename)
+        st.session_state[model_name]=final_model
     
-    house_mod_box_names=['logement_neuf',  'surface', 'annee_construction' , 'nb_pieces','nb_etages',   
+    box_ids=['logement_neuf',  'surface', 'annee_construction' , 'nb_pieces','nb_etages',   
                'nb_places_parking', 'nb_logements_copro','charges_copro_m2',  'ascenceur', 'porte_digicode']
     
-    box_names= house_mod_box_names
+    box_ids_names=['logement neuf',  'surface', 'annee construction' , 'nb pieces','nb etages',   
+               'nb places parking', 'nb logements copro','charges copro m2',  'ascenceur', 'porte digicode']
+    
+    box_ids_default=[0,  60, 2010 , 4,6, 1,25,2000, 1,1]
+    
+    box_names= box_ids.copy()
     box_names.extend(['DEP', 'REG','UU2010','CODE_IRIS'])
 
+    page_prediction_prix_commun(data_dir_prix,model_name,box_ids, box_ids_names, box_ids_default,box_names,False)
 
+
+#  *****************************************************************************
+#  page_prediction_prix_commun
+#  *****************************************************************************
+
+def page_prediction_prix_commun (data_dir_prix, model_name, box_ids, box_ids_names,box_ids_default, box_names,is_chauffage):
+    
+    
+    info_geo  = st.session_state["reference_iris"]
+    pca = st.session_state["pca"]
+    final_model = st.session_state[model_name]
+    
+    input_house={}
+    
     # Créez 3 colonnes
     col1, col2, col3 = st.columns(3)
 
     # Remplir la première colonne avec des inputs
-    x=(len(house_mod_box_names))/3
+    x=(len(box_ids))/3
     with col1:
         input_house['DEP'] = st.text_input(f'DEP',value =78)
-        for i, name in enumerate(house_mod_box_names):
+        for i, name in enumerate(box_ids):
             if i // x == 0:  # pour s'assurer que chaque colonne a un certain nombre d'inputs
-                input_house[name] = st.text_input(f'{name}')
+                if box_ids_default is not None :
+                    input_house[name] = st.text_input(f'{box_ids_names[i]}',value=box_ids_default[i])
+                else :
+                    input_house[name] = st.text_input(f'{box_ids_names[i]}')
     # Remplir la deuxième colonne avec des inputs
     with col2:
         input_house['LIBCOM'] = st.selectbox('Commune',info_geo[info_geo['DEP']==input_house['DEP']]['LIBCOM'].unique(),index=1)
-        for i, name in enumerate(house_mod_box_names):
+        for i, name in enumerate(box_ids):
             if i // x == 1:
-                input_house[name] = st.text_input(f'{name}')
+                if box_ids_default is not None :
+                    input_house[name] = st.text_input(f'{box_ids_names[i]}',value=box_ids_default[i])
+                else :
+                    input_house[name] = st.text_input(f'{box_ids_names[i]}')
     # Remplir la troisième colonne avec des inputs
     with col3:
         input_house['LIB_IRIS'] = st.selectbox('Quartier',info_geo[info_geo['LIBCOM']==input_house['LIBCOM']]['LIB_IRIS'].unique(),index=6)
-        for i, name in enumerate(house_mod_box_names):
-
+        for i, name in enumerate(box_ids):
             if i // x == 2:
-                input_house[name] = st.text_input(f'{name}')
+                if box_ids_default is not None :
+                    input_house[name] = st.text_input(f'{box_ids_names[i]}',value=box_ids_default[i])
+                else :
+                    input_house[name] = st.text_input(f'{box_ids_names[i]}')
     
 
     dep_choices = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
     col4, col5,col6 = st.columns(3)
     with col4:
         expo_choices=['nord', 'sud', 'est', 'ouest']    
-        input_house['expo'] = st.selectbox('Exposition', expo_choices,index=0)  
+        input_house['expo'] = st.selectbox('Exposition', expo_choices,index=1)  
     with col5:
         input_house['dpeL'] = st.selectbox('dpeL', dep_choices, index=0)
     with col6:
         input_house['ges_class'] = st.selectbox('ges_class', dep_choices, index=0) 
+
+
+    if is_chauffage :
+        col7, col8 = st.columns(2)
+        with col7:
+            chauffage_energie_choices=['elec','gaz','fioul','bois']
+            input_house['chauffage_energie'] = st.selectbox('chauffage_energie', chauffage_energie_choices,index=0)
+        with col8:
+            chauffage_systeme_choices=['radiateur','sol' ,'pompe à chaleur','climatisation révérsible','convecteur','poêle à bois','cheminée','chaudière']    
+            input_house['chauffage_systeme'] = st.selectbox('chauffage_systeme', chauffage_systeme_choices,index=0)
 
 
     house_filter_geo = ((info_geo['DEP']==input_house['DEP']) &
@@ -464,15 +511,9 @@ def page_prediction_prix_flat(data_dir_prix,info_geo):
     for key in keys_to_remove:
         input_house.pop(key, None)  # Utiliser `None` pour éviter une erreur si la clé n'existe pas
     
-    if "flat_model" not in st.session_state :
-        filename = "house_model.pkl"
-        file_path = data_dir_prix / filename
-        final_model = pickle.load(open(file_path.as_posix(), 'rb'))
-        st.session_state["flat_model"]=final_model
-    if "pca" not in st.session_state :
-        filename = "df_ACP2_IRIS_immo"
-        pca=load_parquet_file(data_dir_prix,filename)
-        st.session_state["pca"]=pca
+   
+    final_model=st.session_state[model_name]
+    pca = st.session_state["pca"]
 
     if st.button("Lancer la prédiction 🎯 "):
         with st.expander("Afficher les étapes intermédiares de calcul",expanded=False):
@@ -494,17 +535,16 @@ def page_prediction_prix_flat(data_dir_prix,info_geo):
         # thermometre de prix
         
         st.write(f'##### Comparaison avec la commune "{LIBCOM}"')
-        stat_path=os.path.join(data_dir_prix,f'stat_COM_{house_flat}.parquet')
+        stat_path=os.path.join(data_dir_prix,f'stat_COM_{FLAT_NAME}.parquet')
         stat=pd.read_parquet(stat_path)
         stat=stat[stat['LIBCOM']==LIBCOM]
         plot_simple_thermometer(st.session_state.prediction[0], stat['min'].values[0], stat['max'].values[0], stat['mean'].values[0])
 
         st.write(f"##### Comparaison dans l'IRIS \"{LIB_IRIS}\"")
-        stat_path=os.path.join(data_dir_prix,f'stat_IRIS_{house_flat}.parquet')
+        stat_path=os.path.join(data_dir_prix,f'stat_IRIS_{FLAT_NAME}.parquet')
         stat=pd.read_parquet(stat_path)
         stat=stat[stat['CODE_IRIS']==input_house['CODE_IRIS']]
         plot_simple_thermometer(st.session_state.prediction[0], stat['min'].values[0], stat['max'].values[0], stat['mean'].values[0])
-
 
 #  *****************************************************************************
 #  page_prediction_prix_flat
@@ -516,13 +556,18 @@ def page_prediction_prix(data_dir_prix):
         filename = "Reference_IRIS_geo2025"
         info_geo = load_parquet_file(data_dir_prix,filename)
         st.session_state["reference_iris"]=info_geo
-    info_geo=st.session_state["reference_iris"]
+    info_geo = st.session_state["reference_iris"]
+
+    if "pca" not in st.session_state :
+        filename = "df_ACP2_IRIS_immo"
+        pca=load_parquet_file(data_dir_prix,filename)
+        st.session_state["pca"]=pca
 
     house_flat = st.selectbox('Type de bien', HOUSE_FLAT_CHOICE,index=0)
     if house_flat == HOUSE_NAME :
         page_prediction_prix_house(data_dir_prix,info_geo )
     else :
-        page_prediction_prix_flat(data_dir_prix,info_geo )
+        page_prediction_prix_flat(data_dir_prix)
 
 
 

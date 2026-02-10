@@ -1,4 +1,5 @@
 from pathlib import Path
+import joblib
 import pandas as pd
 
 parquet_extension = ".parquet"
@@ -44,3 +45,12 @@ def save_to_parquet_file (df, start_path, filename,suffix = "") :
     else :
         final_path = start_path / (filename + suffix + parquet_extension)
     df.to_parquet(path=final_path.as_posix(),index=True,compression="gzip")
+
+
+#  *****************************************************************************
+#  load_model_file (joblib)
+#  *****************************************************************************
+def load_model_file (input_path,filename) :
+    start_path = Path(input_path)
+    final_path = start_path / filename
+    return joblib.load(final_path)
