@@ -160,7 +160,7 @@ def train_models (models,X_train, y_train,X_test,y_test) :
 
 def flat_plot_xgb (current_dir, model_type,acp_suffix) :
 
-    summary, bar,waterfall,dependency = st.tabs(["Shap summary plot", "Shap bar plot","Shap waterfall plot", "Shap dependency plot"])
+    summary, bar,waterfall,dependency,learning_curve = st.tabs(["Shap summary plot", "Shap bar plot","Shap waterfall plot", "Shap dependency plot","Learning curve"])
     with summary :
         st.write("1. SUMMARY PLOT (Feature Importance)")
         st.write("------------------------------------------------------------")
@@ -199,6 +199,9 @@ def flat_plot_xgb (current_dir, model_type,acp_suffix) :
         # Afficher les résultats
         filename = current_dir / ("shap_dependency_plot"   + acp_suffix + "-" + model_type + shap_app_image_extension)
         st.image (filename.as_posix())
+    with learning_curve:
+        filename = current_dir / ("learning_curve"   + acp_suffix + "-" + model_type + shap_app_image_extension)
+        st.image (filename.as_posix())
 
 #  *****************************************************************************
 #  flat_plot_decision_tree
@@ -206,16 +209,19 @@ def flat_plot_xgb (current_dir, model_type,acp_suffix) :
 
 def flat_plot_decision_tree (current_dir,model_type,acp_suffix) :
 
-    feature_importance, decision_tree = st.tabs(["Feature importances", "Decision Tree"])
+    feature_importance, decision_tree, learning_curve = st.tabs(["Feature importances", "Decision Tree","Learning curve"])
     with feature_importance :
         filename = current_dir / ("decision_tree_importance" + acp_suffix + "-" + model_type + shap_app_image_extension)
         st.image (filename.as_posix())
     with decision_tree :
         filename = current_dir / ("decision_tree_tree" + acp_suffix + "-" + model_type + shap_app_image_extension)
         st.image (filename.as_posix())
+    with learning_curve:
+        filename = current_dir / ("learning_curve"   + acp_suffix + "-" + model_type + shap_app_image_extension)
+        st.image (filename.as_posix())
 
 #  *****************************************************************************
-#  flat_plot_decision_tree
+#  get_type_de_bien_selection_box_index
 #  *****************************************************************************
 
 def get_type_de_bien_selection_box_index(value) :
@@ -225,7 +231,7 @@ def get_type_de_bien_selection_box_index(value) :
     return 1
 
 #  *****************************************************************************
-#  flat_plot_decision_tree
+#  flat_display_modelisation
 #  *****************************************************************************
 
 def flat_display_modelisation(data_dir) :
@@ -237,9 +243,13 @@ def flat_display_modelisation(data_dir) :
 
     st.subheader(r"Options pour la modelisation :")
     col1, col2, col3 = st.columns(3)
-    model_type = st.selectbox('Type de régression', MODEL_NAMES,index=1)
-    with_acp = st.selectbox('ACP option',ACP_OPTION,index=0)
-    with_region = st.selectbox('Region option',REGION_OPTION,index=0)
+    with col1:
+        model_type = st.selectbox('Type de régression', MODEL_NAMES,index=1)
+    with col2:
+         with_acp = st.selectbox('ACP option',ACP_OPTION,index=0)
+    with col3:
+         with_region = st.selectbox('Region option',REGION_OPTION,index=0)
+    st.write("")
 
     acp_suffix =""
     if with_acp == AVEC_ACP :
