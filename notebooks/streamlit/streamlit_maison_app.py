@@ -258,7 +258,7 @@ def page_prediction_prix_house(data_dir_prix):
         filename = "house_model.pkl"
         file_path = data_dir_prix / filename
         final_model = pickle.load(open(file_path.as_posix(), 'rb'))
-        st.session_state["model_name"]=final_model
+        st.session_state[model_name]=final_model
 
     final_model=st.session_state[model_name]
     pca = st.session_state["pca"]
