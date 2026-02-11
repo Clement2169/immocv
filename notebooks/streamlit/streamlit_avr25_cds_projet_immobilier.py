@@ -1,18 +1,13 @@
 
-import os
-import pickle
 import streamlit as st
-import pandas as pd
 import numpy as np
-from pathlib import Path
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-import tensorflow as tf
 
 from streamlit_data_vis import DataViz
 from streamlit_acp_immo import INTERPRETATIONS_PC, OUTLIERS_A_EXCLURE, acp_compute_components,  acp_preprocess_data, afficher_stats_individus_st, afficher_stats_variables_st, get_top_features, plot_cercle_correlation_st, plot_nuage_individus_intelligent_st
 from streamlit_maison_app import  page_prediction_prix
 from streamlit_modelisation_app import ACP_OPTION, AVEC_REGION, DECISION_TREE, DECISION_TREE_NAME, LINEAR, MODEL_NAMES, NON_LINEAR, REGION_OPTION, AVEC_ACP, XGB, XGB_NAME, flat_display_modelisation,flat_plot_decision_tree, flat_plot_xgb
-from streamlit_prevision_app import flat_display_exponential_predictions, flat_display_lstm_predictions, flat_display_monthly_data, flat_display_monthly_inflation_data, flat_display_prophet_inflation_predictions, flat_display_prophet_predictions, flat_merge_data_inflation, flat_plot_autocorrelation, flat_plot_predictions
+from streamlit_prevision_app import  flat_plot_prevision_temps
 
 from config import *
 
@@ -106,74 +101,9 @@ if page == pages[3] :
 #  *****************************************************************************
 if page == pages[4] : 
     # load data
-    df = load_parquet_file(data_dir_temps,monthly_data_file)
-    inflation = load_parquet_file(data_dir_temps,monthly_inflation_data_file)
 
-    if 'time_chart' not in st.session_state : 
-        st.session_state['time_chart'] = 0
- 
-    title = "Prediction en temps du prix au m2 des appartements sur la période " + df.index[0].strftime('%Y-%m') + " - " + df.index[0-1].strftime('%Y-%m')
-    st.write(title)
+    flat_plot_prevision_temps(data_dir_temps)
 
-    tab1, tab2,tab3,tab4 = st.tabs(["Visualisation des prix au m2", "Visualisation des taux d'intérêt", "Prediction","Stationnarité"])
-    with tab1 :
-        title = "Visualization du prix au m2 sur la période " + df.index[0].strftime('%Y-%m') + " - " + df.index[0-1].strftime('%Y-%m')
-        st.subheader(title)
-        flat_display_monthly_data(df)
-
-    with tab2 :
-        title = "Visualization des taux sur la période " + df.index[0].strftime('%Y-%m') + " - " + df.index[0-1].strftime('%Y-%m')
-        st.write(title)
-        flat_display_monthly_inflation_data (inflation,df)
-
-    with tab3 :
-        title = "Prediction du prix au m2 des appartements"
-        st.subheader(title)
-        length = 18
-
-        df_merge = flat_merge_data_inflation(df,inflation)
-        test_data = df_merge[-length:]
-
-        choices = ['Prophet', 'Prophet avec inflation et taux','Exponential smooting prediction','LSTM prediction','Summary']
-        option = st.selectbox('Choix de la prédiction', choices,index=0)
-        if option == choices[0] :
-            st.session_state['time_chart']  = (st.session_state['time_chart'] | 1)
-            forecast = flat_display_prophet_predictions(df, length)
-            st.session_state['forecast'] = forecast
-        elif option == choices[1] :
-            st.session_state['time_chart']  = (st.session_state['time_chart'] | 2)
-            forecast_inflation = flat_display_prophet_inflation_predictions(df_merge, length)
-            st.session_state['forecast_inflation'] = forecast_inflation
-        elif option == choices[2] :
-            st.session_state['time_chart']  = (st.session_state['time_chart'] | 4)
-            forecast_exponential = flat_display_exponential_predictions(df_merge, length)
-            st.session_state['forecast_exponential'] = forecast_exponential
-        elif option == choices[3] :
-            st.session_state['time_chart']  = (st.session_state['time_chart'] | 8)
-            forecast_lstm = flat_display_lstm_predictions(df_merge, length)
-            st.session_state['forecast_lstm'] = forecast_lstm
-        elif option == choices[4] :
-            if st.session_state['time_chart'] == 15 :       
-                forecasts = {"Exponential smoothing": st.session_state['forecast_exponential'], 
-                                "LSTM prediction" : st.session_state['forecast_lstm'], 
-                                "Prophet": st.session_state['forecast'], 
-                                "Prophet with inflation" : st.session_state['forecast_inflation']}
-                flat_plot_predictions(forecasts,test_data,length)
-            else :
-                st.write ("visualiser tous les charts avant de visualiser le summary")
-    with tab4 :
-            st.subheader(r"Analyse de la stationnarité - Auto correlation prix/m² :")
-
-            choices = ['Prix au m2',"Prix au m2 differentiation ordre 1","Prix au m2 differentiation ordre 2"]
-            option = st.selectbox("Choix d'autocorrelation", choices,index=2)
-            st.write()
-            if option == choices[0] :
-                choice = 0
-            elif option == choices[1] :
-                choice =1
-            elif option == choices[2] :
-                 choice = 2
-            flat_plot_autocorrelation (df,choice)
 
 #  *****************************************************************************
 #  Page : prediction du prix
@@ -399,28 +329,13 @@ if page == pages[2] :
         afficher_pdf = st.checkbox("Afficher le tableau synthétique des axes de l'ACP")
 
         if afficher_pdf:
-            import base64
-            nom_fichier_pdf = "resume_acp.pdf"
-
-            try:
-                my_path = data_dir_acp / nom_fichier_pdf
-                with open(my_path.as_posix(), "rb") as pdf_file:
-                    base64_pdf = base64.b64encode(pdf_file.read()).decode('utf-8')
-                
-                # Affichage HTML toute page
-                pdf_display = f'''
-                    <iframe 
-                        src="data:application/pdf;base64,{base64_pdf}#view=FitH" 
-                        width="100%" 
-                        height="1000" 
-                        type="application/pdf"
-                        style="min-width:100%; width:100%; border:none;">
-                    </iframe>
-                '''
-                st.markdown(pdf_display, unsafe_allow_html=True)
-                
-            except FileNotFoundError:
-                st.error(f"Fichier introuvable.")
+ 
+            nom_fichier_pdf = "resume_acp-1.png"
+            my_path = data_dir_acp / nom_fichier_pdf
+            st.image (my_path.as_posix())
+            nom_fichier_pdf = "resume_acp-2.png"
+            my_path = data_dir_acp / nom_fichier_pdf
+            st.image (my_path.as_posix())
 
 #  *****************************************************************************
 #  Page : Conclusion

@@ -14,6 +14,8 @@ import tensorflow as tf
 from pandas.plotting import autocorrelation_plot 
 from statsmodels.tsa.stattools import adfuller
 
+from config import load_parquet_file
+
 immo_vis_dir = "../../../data/immo_vis"
 parquet_extension = ".parquet"
 monthly_data_file= "monthly_data" + parquet_extension
@@ -493,6 +495,79 @@ def flat_plot_autocorrelation (data, option) :
     else :
         st.write (f"{title} n'est pas stationnaire")
 
+#  *****************************************************************************
+#  flat_plot_prevision_temps
+#  *****************************************************************************
+def flat_plot_prevision_temps (data_dir_temps) :
+
+    df = load_parquet_file(data_dir_temps,monthly_data_file)
+    inflation = load_parquet_file(data_dir_temps,monthly_inflation_data_file)
+
+    if 'time_chart' not in st.session_state : 
+        st.session_state['time_chart'] = 0
+ 
+    title = "Prediction en temps du prix au m2 des appartements sur la période " + df.index[0].strftime('%Y-%m') + " - " + df.index[0-1].strftime('%Y-%m')
+    st.write(title)
+
+    tab1, tab2,tab3,tab4 = st.tabs(["Visualisation des prix au m2", "Visualisation des taux d'intérêt", "Prediction","Stationnarité"])
+    with tab1 :
+        title = "Visualization du prix au m2 sur la période " + df.index[0].strftime('%Y-%m') + " - " + df.index[0-1].strftime('%Y-%m')
+        st.subheader(title)
+        flat_display_monthly_data(df)
+
+    with tab2 :
+        title = "Visualization des taux sur la période " + df.index[0].strftime('%Y-%m') + " - " + df.index[0-1].strftime('%Y-%m')
+        st.write(title)
+        flat_display_monthly_inflation_data (inflation,df)
+
+    with tab3 :
+        title = "Prediction du prix au m2 des appartements"
+        st.subheader(title)
+        length = 18
+
+        df_merge = flat_merge_data_inflation(df,inflation)
+        test_data = df_merge[-length:]
+
+        choices = ['Prophet', 'Prophet avec inflation et taux','Exponential smooting prediction','LSTM prediction','Summary']
+        option = st.selectbox('Choix de la prédiction', choices,index=0)
+        if option == choices[0] :
+            st.session_state['time_chart']  = (st.session_state['time_chart'] | 1)
+            forecast = flat_display_prophet_predictions(df, length)
+            st.session_state['forecast'] = forecast
+        elif option == choices[1] :
+            st.session_state['time_chart']  = (st.session_state['time_chart'] | 2)
+            forecast_inflation = flat_display_prophet_inflation_predictions(df_merge, length)
+            st.session_state['forecast_inflation'] = forecast_inflation
+        elif option == choices[2] :
+            st.session_state['time_chart']  = (st.session_state['time_chart'] | 4)
+            forecast_exponential = flat_display_exponential_predictions(df_merge, length)
+            st.session_state['forecast_exponential'] = forecast_exponential
+        elif option == choices[3] :
+            st.session_state['time_chart']  = (st.session_state['time_chart'] | 8)
+            forecast_lstm = flat_display_lstm_predictions(df_merge, length)
+            st.session_state['forecast_lstm'] = forecast_lstm
+        elif option == choices[4] :
+            if st.session_state['time_chart'] == 15 :       
+                forecasts = {"Exponential smoothing": st.session_state['forecast_exponential'], 
+                                "LSTM prediction" : st.session_state['forecast_lstm'], 
+                                "Prophet": st.session_state['forecast'], 
+                                "Prophet with inflation" : st.session_state['forecast_inflation']}
+                flat_plot_predictions(forecasts,test_data,length)
+            else :
+                st.write ("visualiser tous les charts avant de visualiser le summary")
+    with tab4 :
+            st.subheader(r"Analyse de la stationnarité - Auto correlation prix/m² :")
+
+            choices = ['Prix au m2',"Prix au m2 differentiation ordre 1","Prix au m2 differentiation ordre 2"]
+            option = st.selectbox("Choix d'autocorrelation", choices,index=2)
+            st.write()
+            if option == choices[0] :
+                choice = 0
+            elif option == choices[1] :
+                choice =1
+            elif option == choices[2] :
+                 choice = 2
+            flat_plot_autocorrelation (df,choice)
 
 #  *****************************************************************************
 #  main
