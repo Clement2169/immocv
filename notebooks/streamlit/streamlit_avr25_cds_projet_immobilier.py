@@ -132,7 +132,7 @@ if page == pages[2] :
     
     n_components,ind_table,var_table,explained_variance_ratio,pca_df = acp_compute_components(X_num=X_num,df_cor=df_cor,features=features)
 
-    tab1, tab2 = st.tabs(["Enrichissement des données", "Analyse ACP"])
+    tab1, tab2, tab3 = st.tabs(["Enrichissement des données", "Analyse ACP","Statistiques"])
 
     with tab1:
     
@@ -293,7 +293,10 @@ if page == pages[2] :
         st.divider()
 
         # --- STATISTIQUES  ---
-        
+    with tab3:
+
+        st.header("Statistiques sur les variables complémentaires")
+
         # Sélection de l'axe
         axe_etude = st.selectbox(
             "INDICATEURS COMPLEMENTAIRES:", 
@@ -318,10 +321,6 @@ if page == pages[2] :
             top_n_contrib = st.selectbox("Nombre d'individus:", [10, 20, 50], index=0)
             
             afficher_stats_individus_st(ind_table, df_cor, axe=axe_etude, top_n=top_n_contrib)
-
-
-
-        import base64
 
             # --- Tableau PDF interprétation des axes---
         st.divider()
