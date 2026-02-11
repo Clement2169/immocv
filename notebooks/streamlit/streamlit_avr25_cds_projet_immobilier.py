@@ -50,11 +50,6 @@ def get_type_de_bien_selection_box_index(value) :
 #  main
 #  *****************************************************************************
 
-st.set_page_config(
-    page_title="Application Streamlit Wide Mode",
-    layout="wide",
-)
-
 st.session_state["type_de_bien_index"] = 1
 
 st.title(PROJECT_TITLE)
@@ -66,27 +61,20 @@ page=st.sidebar.radio("", pages)
 #  Page : Présentation
 #  *****************************************************************************
 if page == pages[0] : 
-    st.write("### Présentation")
-    import base64
-
-    nom_fichier_pdf = "Compagnon Immobilier_Soutenance-intro.pdf"
-    my_path = data_dir_intro / nom_fichier_pdf
-    with open(my_path.as_posix(), "rb") as pdf_file:
-        base64_pdf = base64.b64encode(pdf_file.read()).decode('utf-8')
-    
-        # Affichage HTML toute page
-        pdf_display = f'''
-            <iframe 
-                src="data:application/pdf;base64,{base64_pdf}#view=FitH" 
-                width="100%" 
-                height="1000"
-                rotate="-90deg"
-                type="application/pdf"
-                style="min-width:100%; width:100%; border:none;">
-            </iframe>
-        '''
-        st.markdown(pdf_display, unsafe_allow_html=True)
-
+    st.subheader("Présentation")
+    tab1, tab2,tab3 = st.tabs(["Introduction", "Fiche Projet","Méthodologie Projet"])
+    with tab1 :
+        nom_fichier_pdf = "compagnon-immobilier-1.png"
+        my_path = data_dir_intro / nom_fichier_pdf
+        st.image (my_path.as_posix())
+    with tab2 :
+        nom_fichier_pdf = "compagnon-immobilier-2.png"
+        my_path = data_dir_intro / nom_fichier_pdf
+        st.image (my_path.as_posix())
+    with tab3 :
+        nom_fichier_pdf = "compagnon-immobilier-3.png"
+        my_path = data_dir_intro / nom_fichier_pdf
+        st.image (my_path.as_posix())
 #  *****************************************************************************
 #  Page : Visualisation des data
 #  *****************************************************************************
@@ -438,22 +426,7 @@ if page == pages[2] :
 #  Page : Conclusion
 #  *****************************************************************************
 if page == pages[len(pages)-1] : 
-    st.write("### Conclusion")
-    nom_fichier_pdf = "Compagnon Immobilier_Soutenance-end.pdf"
+    st.subheader("Conclusion")
+    nom_fichier_pdf = "compagnon-immobilier-4.png"
     my_path = data_dir_intro / nom_fichier_pdf
-    with open(my_path.as_posix(), "rb") as pdf_file:
-        import base64
-        base64_pdf = base64.b64encode(pdf_file.read()).decode('utf-8')
-    
-        # Affichage HTML toute page
-        pdf_display = f'''
-            <iframe 
-                src="data:application/pdf;base64,{base64_pdf}#view=FitH" 
-                width="100%" 
-                height="1000" 
-                rotate="-90deg"
-                type="application/pdf"
-                style="min-width:100%; width:100%; border:none;">
-            </iframe>
-        '''
-        st.markdown(pdf_display, unsafe_allow_html=True)
+    st.image (my_path.as_posix())
