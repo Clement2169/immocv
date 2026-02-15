@@ -62,6 +62,12 @@ def house_flat_encoding(df, model_name):
             df.drop(columns=['chauffage_systeme','chauff_sys_encoded'],inplace=True)
 
 
+        if 'chauffage_mode' in df.columns:
+            df["chauf_mode_encoded"]=df['chauffage_mode'].apply(lambda x : 'combined' if type(x)==list else x)
+            #pd.dummies
+            df=df.merge(pd.get_dummies(df["chauf_mode_encoded"],prefix='chauf_mode',dtype='int'),how='left', left_index=True, right_index=True)
+            df.drop(columns=['chauf_mode_encoded','chauffage_mode'],inplace=True)
+
         return df
 
 def house_flat_exposition_streamlit (df):
@@ -260,43 +266,11 @@ def page_prediction_prix_house(data_dir_prix):
     box_ids_default=None
     columns_to_exclude = ['nb_log_n7',  'loyer_m2_median_n7', 'taux_rendement_n7']
     energies=['radiateur','sol' ,'pompe à chaleur','climatisation révérsible','convecteur','poêle à bois','cheminée','chaudière']    
+    chauf_mode=None
 
 
-    page_prediction_prix_commun (data_dir_prix, model_name, box_ids, box_ids_names,box_ids_default, box_names,energies,columns_to_exclude)
+    page_prediction_prix_commun (data_dir_prix, model_name, box_ids, box_ids_names,box_ids_default, box_names,energies,chauf_mode, columns_to_exclude)
 
-
-
-
-#  *****************************************************************************
-#  flat
-#  *****************************************************************************
-
-
-#  *****************************************************************************
-#  flat_input_prep
-#  *****************************************************************************
-
-def flat_input_prep(input_flat,box_names,pca):
-    df_flat_pred=pd.DataFrame([input_flat])
-    df_flat_pred[box_names] = df_flat_pred[box_names].apply(pd.to_numeric, errors='coerce')
-    
-    st.write("DF avant encodage : ")
-    st.dataframe(df_flat_pred)
-    st.write(df_flat_pred)
-    
-    df_flat_encoded=house_flat_encoding(df_flat_pred,'dpeL_num')
-    df_flat_encoded=house_flat_exposition_streamlit(df_flat_encoded)
-    
-    st.write("DF apres encodage : ")
-    st.dataframe(df_flat_encoded)
-    st.write(df_flat_encoded)
-
-    df_flat_encoded=house_flat_add_ACP(df_flat_encoded,pca)
-    st.write("DF apres ACP : ")
-    st.dataframe(df_flat_encoded)
-    st.write(df_flat_encoded)
-
-    return df_flat_encoded
 
 #  *****************************************************************************
 #  page_prediction_prix_flat
@@ -322,16 +296,17 @@ def page_prediction_prix_flat(data_dir_prix):
     box_names.extend(['DEP', 'REG','UU2010','CODE_IRIS'])
     columns_to_exclude = [['nb_log_n7',  'loyer_m2_median_n7', 'taux_rendement_n7']]
     energies = ["radiateur","pompe à chaleur","convecteur","climatisation","chaudière","sol","poêle-bois"]
+    chauf_mode=['individuel', 'collectif','central']
 
 
-    page_prediction_prix_commun(data_dir_prix,model_name,box_ids, box_ids_names, box_ids_default,box_names,energies,columns_to_exclude)
+    page_prediction_prix_commun(data_dir_prix,model_name,box_ids, box_ids_names, box_ids_default,box_names,energies,chauf_mode, columns_to_exclude)
 
 
 #  *****************************************************************************
 #  page_prediction_prix_commun
 #  *****************************************************************************
 
-def page_prediction_prix_commun (data_dir_prix, model_name, box_ids, box_ids_names,box_ids_default, box_names,energies,columns_to_exclude):
+def page_prediction_prix_commun (data_dir_prix, model_name, box_ids, box_ids_names,box_ids_default, box_names,energies,chauf_mode, columns_to_exclude):
     
     
     info_geo  = st.session_state["reference_iris"]
@@ -384,12 +359,16 @@ def page_prediction_prix_commun (data_dir_prix, model_name, box_ids, box_ids_nam
     with col6:
         input_house['ges_class'] = st.selectbox('ges_class', dep_choices, index=0) 
 
-    col7, col8 = st.columns(2)
+    col7, col8,col9 = st.columns(3)
     with col7:
         chauffage_energie_choices=['elec','gaz','fioul','bois']
         input_house['chauffage_energie'] = st.selectbox('chauffage_energie', chauffage_energie_choices,index=0)
     with col8:
         input_house['chauffage_systeme'] = st.selectbox('chauffage_systeme', energies,index=0)
+    if chauf_mode is not None :
+        with col9:
+            chauffage_mode_choices=chauf_mode
+            input_house['chauffage_mode'] = st.selectbox('chauffage_mode', chauffage_mode_choices,index=0)
         
 
         
