@@ -3,7 +3,8 @@ import os
 import numpy as np
 from config import FLAT_NAME,HOUSE_FLAT_CHOICE, HOUSE_NAME, load_model_file, load_parquet_file
 
-
+FLAT_MODEL_NAME = "flat_model"
+HOUSE_MODEL_NAME= "house_model"
 
 def house_flat_encoding(df,dpe_name= None):
 
@@ -71,14 +72,14 @@ def house_flat_add_ACP(df,pca):
         return df
 
 import streamlit as st
-def house_input_prep(input_house,box_names,pca):
+def house_input_prep(input_house,box_names,pca,dpe_name=None):
     df_house_pred=pd.DataFrame([input_house])
     df_house_pred[box_names] = df_house_pred[box_names].apply(pd.to_numeric, errors='coerce')
     
     st.write("DF avant encodage : ")
     st.dataframe(df_house_pred)
     
-    df_house_encoded=house_flat_encoding(df_house_pred)
+    df_house_encoded=house_flat_encoding(df_house_pred,dpe_name)
     df_house_encoded=house_flat_exposition_streamlit(df_house_encoded)
     
     st.write("DF apres encodage : ")
@@ -227,9 +228,9 @@ def plot_simple_thermometer(prediction, min_price, max_price, mean_price):
 
 def page_prediction_prix_house(data_dir_prix):
     
-    model_name = "house_model"
+    model_name = HOUSE_MODEL_NAME
     if model_name not in st.session_state :
-        filename = "house_model.pkl"
+        filename = HOUSE_MODEL_NAME + ".pkl"
         file_path = data_dir_prix / filename
         final_model = pickle.load(open(file_path.as_posix(), 'rb'))
         st.session_state[model_name]=final_model
@@ -295,7 +296,7 @@ def flat_input_prep(input_flat,box_names,pca):
 
 def page_prediction_prix_flat_new(data_dir_prix):
 
-    model_name = "flat_model"
+    model_name = FLAT_MODEL_NAME
     if model_name not in st.session_state :
         filename = "appartement_model.gz"
         final_model = load_model_file(data_dir_prix,filename)
@@ -311,9 +312,9 @@ def page_prediction_prix_flat_new(data_dir_prix):
     
     box_names= box_ids.copy()
     box_names.extend(['DEP', 'REG','UU2010','CODE_IRIS'])
-    columns_to_exclude = []
+    columns_to_exclude = [['nb_log_n7',  'loyer_m2_median_n7', 'taux_rendement_n7']]
 
-    page_prediction_prix_commun(data_dir_prix,model_name,box_ids, box_ids_names, box_ids_default,box_names,False,columns_to_exclude)
+    page_prediction_prix_commun(data_dir_prix,model_name,box_ids, box_ids_names, box_ids_default,box_names,False,columns_to_exclude,"dpeL_num")
 
 
 #  *****************************************************************************
@@ -325,14 +326,14 @@ def page_prediction_prix_flat(data_dir_prix):
 
     input_house={}
 
-    model_name = "flat_model"
+    model_name = FLAT_MODEL_NAME
     if model_name not in st.session_state :
         filename = "appartement_model.gz"
         final_model = load_model_file(data_dir_prix,filename)
         st.session_state[model_name]=final_model
 
     pca = st.session_state["pca"]
-    final_model=st.session_state["house_model"]
+    final_model=st.session_state[model_name]
     info_geo = st.session_state["reference_iris"]
 
 
@@ -416,7 +417,7 @@ def page_prediction_prix_flat(data_dir_prix):
     if st.button("Lancer la prédiction 🎯 "):
         with st.expander("Afficher les étapes intermédiares de calcul",expanded=False):
         
-            df_house_encoded=house_input_prep(input_house,box_names,pca)
+            df_house_encoded=house_input_prep(input_house,box_names,pca,"dpeL_num")
             # Faire une prédiction
             columns_to_exclude = ['nb_log_n7',  'loyer_m2_median_n7', 'taux_rendement_n7']
             df_encoded_reindexed , prediction = house_flat_price_pred(df_house_encoded,final_model,columns_to_exclude)
@@ -450,7 +451,7 @@ def page_prediction_prix_flat(data_dir_prix):
 #  page_prediction_prix_commun
 #  *****************************************************************************
 
-def page_prediction_prix_commun (data_dir_prix, model_name, box_ids, box_ids_names,box_ids_default, box_names,is_chauffage,columns_to_exclude):
+def page_prediction_prix_commun (data_dir_prix, model_name, box_ids, box_ids_names,box_ids_default, box_names,is_chauffage,columns_to_exclude,dpe_name=None):
     
     
     info_geo  = st.session_state["reference_iris"]
@@ -545,7 +546,7 @@ def page_prediction_prix_commun (data_dir_prix, model_name, box_ids, box_ids_nam
     if st.button("Lancer la prédiction 🎯 "):
         with st.expander("Afficher les étapes intermédiares de calcul",expanded=False):
         
-            df_house_encoded=house_input_prep(input_house,box_names,pca)
+            df_house_encoded=house_input_prep(input_house,box_names,pca,dpe_name)
             # Faire une prédiction
             df_encoded_reindexed , prediction = house_flat_price_pred(df_house_encoded,final_model,columns_to_exclude)
             st.session_state.prediction = prediction
@@ -596,7 +597,7 @@ def page_prediction_prix(data_dir_prix):
     if house_flat == HOUSE_NAME :
         page_prediction_prix_house(data_dir_prix)
     else :
-        page_prediction_prix_flat(data_dir_prix)
+        page_prediction_prix_flat_new(data_dir_prix)
 
 
 
